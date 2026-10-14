@@ -382,3 +382,711 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
         defaultHomeworks: [
           { id: 'gt-hw-1', title: '이번 주 레슨 숙제 / 솔로·리프 과업', sub: '우측 상단 [목표/숙제 추가] 또는 [레슨 노트 일괄 붙여넣기]로 자유롭게 수정하세요.', target: '목표 BPM 기록' }
         ],
+        defaultRoutines: [
+          { id: 'gt-rt-1', title: '크로매틱 & 스케일 피킹 워밍업', sub: '얼터네이트 피킹 싱크로율 및 불필요한 현 노이즈 뮤트 체크', target: '워밍업 10분' },
+          { id: 'gt-rt-2', title: '코드 체인지 & 리듬 커팅 / 배킹 연습', sub: '16비트 커팅 및 보이싱 전환 시 박자 흔들림 없이 유지', target: '메트로놈 정박' },
+          { id: 'gt-rt-3', title: '초킹 / 비브라토 / 레가토 테크닉 연습', sub: '정확한 피치 도달 및 리드 프레이즈 뉘앙스 다듬기', target: '피치 정확도' },
+          { id: 'gt-rt-4', title: '합주곡 / 카피곡 리프 & 솔로 연습', sub: '메인 리프, 백업 구간, 솔로 프레이즈 및 이펙터 전환 체크', target: '원곡 템포 완주' }
+        ]
+      },
+      vocal: {
+        id: 'vocal',
+        name: '보컬',
+        eng: 'VOCAL',
+        icon: 'fa-solid fa-microphone-lines',
+        accentText: 'text-rose-400',
+        accentBg: 'bg-rose-500/20',
+        accentBorder: 'border-rose-500/40',
+        rawNote: `이번 주 보컬 레슨 숙제나 곡 연습 포인트를 이곳에 붙여넣고 관리하세요!`,
+        defaultHomeworks: [
+          { id: 'vc-hw-1', title: '이번 주 보컬 레슨 숙제 / 곡 구간 집중 연습', sub: '우측 상단 [목표/숙제 추가] 또는 [레슨 노트 일괄 붙여넣기]로 자유롭게 수정하세요.', target: '레슨 포인트 적용' }
+        ],
+        defaultRoutines: [
+          { id: 'vc-rt-1', title: '호흡 압력 유지 & 립트릴(Lip Trill) 워밍업', sub: '본 가창 전 성대 이완 및 일정한 호흡 지지력 깨우기', target: '워밍업 10분' },
+          { id: 'vc-rt-2', title: '스케일 발성 & 공명점/성구 전환 연습', sub: '미들보이스-헤드보이스 연결 및 고음역 목 조임 방지', target: '발성 루틴' },
+          { id: 'vc-rt-3', title: '피치(음정) & 리듬 딕션 트레이닝', sub: '빠른 템포 가사 전달력 및 밴드 리듬에 맞춘 어택감 연습', target: '녹음 모니터링' },
+          { id: 'vc-rt-4', title: '합주곡 / 카피곡 가창 & 호흡 분배 연습', sub: '절-후렴 다이내믹 조절 및 브릿지 호흡 포인트 정리', target: '전곡 완창' }
+        ]
+      }
+    };
+
+    let currentPart = localStorage.getItem(SELECTED_PART_KEY) || 'drum';
+    if (!PART_META[currentPart]) currentPart = 'drum';
+
+    function createInitialPartsData() {
+      const parts = {};
+      Object.keys(PART_META).forEach(key => {
+        parts[key] = {
+          rawLessonNote: PART_META[key].rawNote,
+          homeworks: JSON.parse(JSON.stringify(PART_META[key].defaultHomeworks)),
+          routines: JSON.parse(JSON.stringify(PART_META[key].defaultRoutines)),
+          logs: {}
+        };
+      });
+      return parts;
+    }
+
+    let state = {
+      selectedDate: getFormatDate(new Date()),
+      parts: createInitialPartsData(),
+      updatedAt: 0
+    };
+
+    let currentAddType = 'homework';
+    let db = null;
+    let unsubscribeSnapshot = null;
+    let isRemoteUpdating = false;
+
+    function getFormatDate(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    // 기존 단일 드럼 데이터(homeworks, routines, logs)가 있으면 parts.drum으로 무손실 마이그레이션
+    function normalizeDataObject(rawObj) {
+      const baseParts = createInitialPartsData();
+      if (rawObj.parts) {
+        Object.keys(PART_META).forEach(k => {
+          if (rawObj.parts[k]) {
+            baseParts[k] = {
+              rawLessonNote: rawObj.parts[k].rawLessonNote ?? baseParts[k].rawLessonNote,
+              homeworks: rawObj.parts[k].homeworks ?? baseParts[k].homeworks,
+              routines: rawObj.parts[k].routines ?? baseParts[k].routines,
+              logs: rawObj.parts[k].logs ?? {}
+            };
+          }
+        });
+      }
+      // 만약 구버전 루트 레벨 드럼 데이터가 존재하고 parts.drum 로그가 비어있거나 구버전에서 넘어온 경우 병합
+      if (rawObj.homeworks || rawObj.routines || rawObj.logs) {
+        if (!rawObj.parts || !rawObj.parts.drum) {
+          baseParts.drum = {
+            rawLessonNote: rawObj.rawLessonNote ?? baseParts.drum.rawLessonNote,
+            homeworks: rawObj.homeworks ?? baseParts.drum.homeworks,
+            routines: rawObj.routines ?? baseParts.drum.routines,
+            logs: rawObj.logs ?? {}
+          };
+        }
+      }
+      return baseParts;
+    }
+
+    function getActivePartData() {
+      if (!state.parts[currentPart]) {
+        state.parts[currentPart] = createInitialPartsData()[currentPart];
+      }
+      return state.parts[currentPart];
+    }
+
+    function loadLocalState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          state.parts = normalizeDataObject(parsed);
+          state.updatedAt = parsed.updatedAt || 0;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    async function saveState() {
+      state.updatedAt = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+
+      if (db && !isRemoteUpdating) {
+        await pushToCloud();
+      }
+    }
+
+    // --- Firebase 클라우드 연동 로직 ---
+    function setSyncBadge(status, text) {
+      const dot = document.getElementById('syncStatusDot');
+      const label = document.getElementById('syncStatusText');
+      const forceBtn = document.getElementById('forcePushBtn');
+      label.textContent = text;
+
+      if (status === 'connected') {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        forceBtn.classList.remove('hidden');
+      } else if (status === 'syncing') {
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+      } else if (status === 'error') {
+        dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        forceBtn.classList.add('hidden');
+      }
+    }
+
+    function parseFirebaseConfigText(raw) {
+      let cleaned = raw.trim();
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+      }
+      cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+      cleaned = cleaned.replace(/,\s*}/g, '}');
+      return JSON.parse(cleaned);
+    }
+
+    async function initFirebaseFromSaved() {
+      const savedConfigRaw = localStorage.getItem(FB_CONFIG_KEY);
+      if (!savedConfigRaw) {
+        setSyncBadge('local', '로컬 모드 (연동 설정)');
+        return;
+      }
+      try {
+        const { config, docId } = JSON.parse(savedConfigRaw);
+        document.getElementById('firebaseConfigInput').value = JSON.stringify(config, null, 2);
+        document.getElementById('syncDocIdInput').value = docId || 'my_drum_tracker';
+        await connectFirestore(config, docId || 'my_drum_tracker');
+      } catch (e) {
+        console.error('Firebase 초기화 실패:', e);
+        setSyncBadge('error', '연동 오류 (재설정 필요)');
+      }
+    }
+
+    async function connectFirestore(config, docId) {
+      try {
+        setSyncBadge('syncing', '클라우드 연결 중...');
+        if (unsubscribeSnapshot) {
+          unsubscribeSnapshot();
+          unsubscribeSnapshot = null;
+        }
+        const existingApps = getApps();
+        for (const app of existingApps) {
+          await deleteApp(app);
+        }
+
+        const app = initializeApp(config);
+        db = getFirestore(app);
+        const docRef = doc(db, 'drum_dashboard', docId);
+
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) {
+          await pushToCloud();
+        } else {
+          // 만약 클라우드에 구버전(단일 드럼) 데이터만 있고 parts 필드가 아직 없다면 마이그레이션 후 저장
+          const cloudData = snap.data();
+          if (!cloudData.parts && (cloudData.homeworks || cloudData.logs)) {
+            state.parts = normalizeDataObject(cloudData);
+            await pushToCloud();
+          }
+        }
+
+        unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const cloudData = docSnap.data();
+            isRemoteUpdating = true;
+            state.parts = normalizeDataObject(cloudData);
+            state.updatedAt = cloudData.updatedAt ?? Date.now();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            renderAll();
+            isRemoteUpdating = false;
+            setSyncBadge('connected', '실시간 동기화 중');
+          }
+        }, (err) => {
+          console.error('Snapshot 에러:', err);
+          setSyncBadge('error', '동기화 권한/연결 오류');
+        });
+
+      } catch (err) {
+        console.error(err);
+        setSyncBadge('error', '연동 실패 (설정 확인)');
+        alert('Firebase 연결에 실패했습니다. Config 값과 Firestore 규칙을 확인해주세요.');
+      }
+    }
+
+    async function pushToCloud() {
+      if (!db) return;
+      try {
+        const savedConfigRaw = localStorage.getItem(FB_CONFIG_KEY);
+        if (!savedConfigRaw) return;
+        const { docId } = JSON.parse(savedConfigRaw);
+        const docRef = doc(db, 'drum_dashboard', docId || 'my_drum_tracker');
+        // 하위 호환성을 위해 drum 데이터는 루트에도 함께 유지하고 parts 전체를 저장
+        const drumData = state.parts.drum;
+        await setDoc(docRef, {
+          parts: state.parts,
+          rawLessonNote: drumData.rawLessonNote,
+          homeworks: drumData.homeworks,
+          routines: drumData.routines,
+          logs: drumData.logs,
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error('클라우드 저장 오류:', e);
+        setSyncBadge('error', '저장 오류');
+      }
+    }
+
+    // --- 달력 및 계산 로직 ---
+    function getWeekDates(baseDateStr) {
+      const [y, m, d] = baseDateStr.split('-').map(Number);
+      const current = new Date(y, m - 1, d);
+      const dayOfWeek = current.getDay();
+      const sunday = new Date(current);
+      sunday.setDate(current.getDate() - dayOfWeek);
+
+      const days = [];
+      const dayNames = ['일(점검)', '월', '화', '수', '목', '금', '토'];
+      for (let i = 0; i < 7; i++) {
+        const temp = new Date(sunday);
+        temp.setDate(sunday.getDate() + i);
+        days.push({
+          dateStr: getFormatDate(temp),
+          dayName: dayNames[i],
+          dayNum: temp.getDate(),
+          isSunday: i === 0
+        });
+      }
+      return days;
+    }
+
+    function getPartDayCompletion(partKey, dateStr) {
+      const pData = state.parts[partKey];
+      if (!pData) return { done: 0, total: 0, rate: 0 };
+      const totalItems = (pData.homeworks?.length || 0) + (pData.routines?.length || 0);
+      if (totalItems === 0) return { done: 0, total: 0, rate: 0 };
+      const dayLog = pData.logs?.[dateStr]?.checks || {};
+      let done = 0;
+      [...(pData.homeworks || []), ...(pData.routines || [])].forEach(item => {
+        if (dayLog[item.id]) done++;
+      });
+      return {
+        done,
+        total: totalItems,
+        rate: Math.round((done / totalItems) * 100)
+      };
+    }
+
+    function calculatePartStreak(partKey) {
+      let streak = 0;
+      const today = new Date();
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dStr = getFormatDate(d);
+        const comp = getPartDayCompletion(partKey, dStr);
+        if (comp.done > 0) {
+          streak++;
+        } else {
+          if (i === 0) continue;
+          break;
+        }
+      }
+      return streak;
+    }
+
+    function renderPartTabs() {
+      const meta = PART_META[currentPart];
+      const headerIcon = document.getElementById('partHeaderIcon');
+      headerIcon.className = `w-10 h-10 rounded-xl ${meta.accentBg} border ${meta.accentBorder} flex items-center justify-center ${meta.accentText} text-xl shrink-0`;
+      headerIcon.innerHTML = `<i class="${meta.icon}"></i>`;
+
+      document.getElementById('partHeaderTitle').textContent = `${meta.eng} ROUTINE TRACKER`;
+      document.getElementById('calendarPartLabel').textContent = meta.name;
+      document.getElementById('memoPartLabel').textContent = meta.name;
+      document.getElementById('hwSectionTitle').textContent = `이번 주 ${meta.name} 레슨 숙제 & 주간 목표`;
+      document.getElementById('rtSectionTitle').textContent = `${meta.name} 개인 데일리 루틴`;
+
+      const container = document.getElementById('partTabsContainer');
+      container.innerHTML = Object.keys(PART_META).map(key => {
+        const p = PART_META[key];
+        const isActive = key === currentPart;
+        const comp = getPartDayCompletion(key, state.selectedDate);
+        const hasPractice = comp.done > 0;
+
+        return `
+          <button onclick="window.selectPart('${key}')"
+            class="part-tab flex flex-col sm:flex-row items-center justify-between gap-1.5 px-3 py-2.5 rounded-xl border transition ${isActive ? 'active border-white bg-slate-800' : 'border-slate-800 bg-slate-900/60 hover:bg-slate-800/60 text-slate-400'}">
+            <div class="flex items-center gap-2">
+              <i class="${p.icon} ${isActive ? p.accentText : 'text-slate-400'} text-sm"></i>
+              <span class="text-xs sm:text-sm font-bold ${isActive ? 'text-white' : 'text-slate-300'}">${p.name}</span>
+            </div>
+            <div class="flex items-center gap-1 text-[11px] font-semibold ${hasPractice ? 'text-emerald-400' : 'text-slate-500'}">
+              ${hasPractice ? '<i class="fa-solid fa-fire text-orange-400 text-[10px]"></i>' : ''}
+              <span>${comp.done}/${comp.total}</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderWeekCalendar() {
+      const pData = getActivePartData();
+      const weekDays = getWeekDates(state.selectedDate);
+      const grid = document.getElementById('weekDaysGrid');
+      const todayStr = getFormatDate(new Date());
+
+      document.getElementById('currentWeekRange').textContent =
+        `주간 범위: ${weekDays[0].dateStr} (일) ~ ${weekDays[6].dateStr} (토)`;
+
+      let weeklyTotalDone = 0;
+      let weeklyTotalPossible = weekDays.length * ((pData.homeworks?.length || 0) + (pData.routines?.length || 0));
+
+      grid.innerHTML = weekDays.map(day => {
+        const comp = getPartDayCompletion(currentPart, day.dateStr);
+        weeklyTotalDone += comp.done;
+        const isSelected = day.dateStr === state.selectedDate;
+        const isToday = day.dateStr === todayStr;
+
+        let statusIcon = '<i class="fa-regular fa-circle text-slate-600"></i>';
+        if (comp.rate === 100 && comp.total > 0) {
+          statusIcon = '<i class="fa-solid fa-fire text-emerald-400"></i>';
+        } else if (comp.done > 0) {
+          statusIcon = '<i class="fa-solid fa-fire text-amber-400"></i>';
+        }
+
+        return `
+          <button onclick="window.selectDate('${day.dateStr}')"
+            class="day-btn flex flex-col items-center p-2 sm:p-2.5 rounded-xl border border-slate-700/80 hover:border-slate-500 transition ${isSelected ? 'active' : 'bg-slate-900/50'}">
+            <span class="text-[10px] sm:text-[11px] font-medium ${day.isSunday ? 'text-amber-400 font-bold' : 'text-slate-400'}">
+              ${day.dayName}
+            </span>
+            <span class="text-sm sm:text-base font-bold mt-1 ${isToday ? 'text-sky-400 underline' : 'text-white'}">
+              ${day.dayNum}
+            </span>
+            <div class="mt-1.5 text-xs sm:text-sm">${statusIcon}</div>
+            <span class="text-[10px] text-slate-400 mt-1">${comp.done}/${comp.total}</span>
+          </button>
+        `;
+      }).join('');
+
+      const weeklyRate = weeklyTotalPossible > 0 ? Math.round((weeklyTotalDone / weeklyTotalPossible) * 100) : 0;
+      document.getElementById('weeklyRate').textContent = weeklyRate;
+      document.getElementById('streakCount').textContent = calculatePartStreak(currentPart);
+    }
+
+    function renderTaskLists() {
+      const pData = getActivePartData();
+      const meta = PART_META[currentPart];
+      const dateStr = state.selectedDate;
+      const dayLog = pData.logs?.[dateStr] || { checks: {}, bpms: {}, memo: '' };
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dayOfWeek = new Date(y, m - 1, d).getDay();
+      const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+
+      document.getElementById('selectedDateTitle').textContent = `[${meta.name}] ${dateStr} (${dayNames[dayOfWeek]}) 체크리스트`;
+      const lessonBadge = document.getElementById('lessonDayBadge');
+      if (dayOfWeek === 0) lessonBadge.classList.remove('hidden');
+      else lessonBadge.classList.add('hidden');
+
+      const comp = getPartDayCompletion(currentPart, dateStr);
+      document.getElementById('dailyProgressText').textContent = `${comp.done} / ${comp.total} (${comp.rate}%)`;
+      document.getElementById('dailyProgressBar').style.width = `${comp.rate}%`;
+
+      document.getElementById('homeworkList').innerHTML = (pData.homeworks || []).map(item =>
+        createItemHTML(item, 'homework', dayLog)
+      ).join('');
+
+      document.getElementById('routineList').innerHTML = (pData.routines || []).map(item =>
+        createItemHTML(item, 'routine', dayLog)
+      ).join('');
+
+      document.getElementById('dailyMemoInput').value = dayLog.memo || '';
+    }
+
+    function createItemHTML(item, type, dayLog) {
+      const checked = !!dayLog.checks?.[item.id];
+      const bpmVal = dayLog.bpms?.[item.id] || '';
+      const badgeColor = type === 'homework'
+        ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+        : 'bg-sky-500/10 text-sky-300 border-sky-500/30';
+
+      return `
+        <div class="p-3.5 rounded-xl bg-slate-900/80 border ${checked ? 'border-emerald-500/50 bg-emerald-950/10' : 'border-slate-700/70'} flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition">
+          <label class="flex items-start gap-3 cursor-pointer flex-1 select-none">
+            <input type="checkbox" class="hidden custom-checkbox" ${checked ? 'checked' : ''}
+              onchange="window.toggleCheck('${item.id}')">
+            <div class="w-5 h-5 mt-0.5 rounded-md border-2 border-slate-500 flex items-center justify-center transition shrink-0">
+              <i class="fa-solid fa-check text-slate-950 text-xs opacity-0 transform scale-50 transition"></i>
+            </div>
+            <div class="space-y-1 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-bold ${checked ? 'line-through text-slate-400' : 'text-white'}">${item.title}</span>
+                ${item.target ? `<span class="text-[11px] px-2 py-0.5 rounded-md border ${badgeColor} font-medium">${item.target}</span>` : ''}
+              </div>
+              ${item.sub ? `<p class="text-xs text-slate-400 leading-relaxed">${item.sub}</p>` : ''}
+            </div>
+          </label>
+
+          <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+            <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1">
+              <i class="fa-solid fa-gauge-high text-slate-400 text-xs mr-1.5"></i>
+              <input type="text" placeholder="BPM / 상태" value="${bpmVal}"
+                onchange="window.saveBpm('${item.id}', this.value)"
+                class="bg-transparent text-xs text-white w-24 focus:outline-none">
+            </div>
+            <button onclick="window.deleteItem('${type}', '${item.id}')" title="항목 삭제"
+              class="text-slate-500 hover:text-rose-400 p-1.5 text-xs transition">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function ensureDayLog(dateStr) {
+      const pData = getActivePartData();
+      if (!pData.logs) pData.logs = {};
+      if (!pData.logs[dateStr]) {
+        pData.logs[dateStr] = { checks: {}, bpms: {}, memo: '' };
+      }
+    }
+
+    function renderAll() {
+      renderPartTabs();
+      renderWeekCalendar();
+      renderTaskLists();
+    }
+
+    // --- 전역 핸들러 노출 ---
+    window.selectPart = (partKey) => {
+      if (!PART_META[partKey]) return;
+      currentPart = partKey;
+      localStorage.setItem(SELECTED_PART_KEY, partKey);
+      renderAll();
+    };
+
+    window.toggleCheck = (itemId) => {
+      ensureDayLog(state.selectedDate);
+      const pData = getActivePartData();
+      const current = !!pData.logs[state.selectedDate].checks[itemId];
+      pData.logs[state.selectedDate].checks[itemId] = !current;
+      saveState();
+    };
+
+    window.saveBpm = (itemId, val) => {
+      ensureDayLog(state.selectedDate);
+      const pData = getActivePartData();
+      pData.logs[state.selectedDate].bpms[itemId] = val.trim();
+      saveState();
+    };
+
+    window.saveDailyMemo = () => {
+      ensureDayLog(state.selectedDate);
+      const pData = getActivePartData();
+      pData.logs[state.selectedDate].memo = document.getElementById('dailyMemoInput').value;
+      saveState();
+    };
+
+    window.selectDate = (dateStr) => {
+      state.selectedDate = dateStr;
+      renderAll();
+    };
+
+    window.shiftWeek = (daysOffset) => {
+      const [y, m, d] = state.selectedDate.split('-').map(Number);
+      const current = new Date(y, m - 1, d);
+      current.setDate(current.getDate() + daysOffset);
+      state.selectedDate = getFormatDate(current);
+      renderAll();
+    };
+
+    window.goToToday = () => {
+      state.selectedDate = getFormatDate(new Date());
+      renderAll();
+    };
+
+    window.deleteItem = (type, id) => {
+      if (!confirm('이 연습 항목을 목록에서 삭제할까요?')) return;
+      const pData = getActivePartData();
+      if (type === 'homework') {
+        pData.homeworks = pData.homeworks.filter(i => i.id !== id);
+      } else {
+        pData.routines = pData.routines.filter(i => i.id !== id);
+      }
+      saveState();
+    };
+
+    window.resetDefaultRoutines = () => {
+      const meta = PART_META[currentPart];
+      if (!confirm(`[${meta.name}] 파트의 개인 데일리 루틴을 기본 4가지로 초기화할까요?`)) return;
+      const pData = getActivePartData();
+      pData.routines = JSON.parse(JSON.stringify(meta.defaultRoutines));
+      saveState();
+    };
+
+    window.openAddModal = (type) => {
+      currentAddType = type;
+      const meta = PART_META[currentPart];
+      document.getElementById('addModalTitle').textContent =
+        type === 'homework' ? `[${meta.name}] 새 레슨 숙제 / 주간 목표 추가` : `[${meta.name}] 새 개인 루틴 추가`;
+      document.getElementById('newItemTitle').value = '';
+      document.getElementById('newItemSub').value = '';
+      document.getElementById('newItemTarget').value = '';
+      const modal = document.getElementById('addModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.closeAddModal = () => {
+      const modal = document.getElementById('addModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    window.confirmAddItem = () => {
+      const title = document.getElementById('newItemTitle').value.trim();
+      const sub = document.getElementById('newItemSub').value.trim();
+      const target = document.getElementById('newItemTarget').value.trim();
+      if (!title) {
+        alert('연습 제목을 입력해주세요.');
+        return;
+      }
+      const pData = getActivePartData();
+      const newItem = {
+        id: `${currentPart}-item-` + Date.now(),
+        title,
+        sub,
+        target
+      };
+      if (currentAddType === 'homework') {
+        pData.homeworks.push(newItem);
+      } else {
+        pData.routines.push(newItem);
+      }
+      window.closeAddModal();
+      saveState();
+    };
+
+    window.toggleRawNoteModal = () => {
+      const modal = document.getElementById('rawNoteModal');
+      const meta = PART_META[currentPart];
+      const pData = getActivePartData();
+      if (modal.classList.contains('hidden')) {
+        document.getElementById('rawModalTitle').textContent = `[${meta.name}] 레슨 노트 / 주간 목표 원문 관리`;
+        document.getElementById('rawLessonText').value = pData.rawLessonNote || '';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    };
+
+    window.saveRawNoteOnly = () => {
+      const pData = getActivePartData();
+      pData.rawLessonNote = document.getElementById('rawLessonText').value;
+      saveState();
+      window.toggleRawNoteModal();
+    };
+
+    window.parseLinesToHomework = (replaceExisting = false) => {
+      const text = document.getElementById('rawLessonText').value.trim();
+      if (!text) return;
+      const pData = getActivePartData();
+      pData.rawLessonNote = text;
+      if (replaceExisting) {
+        pData.homeworks = [];
+      }
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      lines.forEach((line, idx) => {
+        pData.homeworks.push({
+          id: `${currentPart}-hw-` + Date.now() + '-' + idx,
+          title: line,
+          sub: '',
+          target: '주간 목표'
+        });
+      });
+      saveState();
+      window.toggleRawNoteModal();
+    };
+
+    window.resetToDefaultHomework = () => {
+      const meta = PART_META[currentPart];
+      if (!confirm(`[${meta.name}] 파트의 기본 숙제 세팅으로 복구할까요?`)) return;
+      const pData = getActivePartData();
+      pData.rawLessonNote = meta.rawNote;
+      pData.homeworks = JSON.parse(JSON.stringify(meta.defaultHomeworks));
+      document.getElementById('rawLessonText').value = pData.rawLessonNote;
+      saveState();
+      window.toggleRawNoteModal();
+    };
+
+    // --- 동기화 모달 핸들러 ---
+    window.openSyncModal = () => {
+      const modal = document.getElementById('syncModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.closeSyncModal = () => {
+      const modal = document.getElementById('syncModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    window.saveFirebaseConfig = async () => {
+      const rawText = document.getElementById('firebaseConfigInput').value;
+      const docId = document.getElementById('syncDocIdInput').value.trim() || 'my_drum_tracker';
+      if (!rawText.trim()) {
+        alert('Firebase Config 내용을 입력해주세요.');
+        return;
+      }
+      try {
+        const config = parseFirebaseConfigText(rawText);
+        if (!config.apiKey || !config.projectId) {
+          alert('유효한 Firebase Config 형식이 아닙니다 (apiKey, projectId 필수).');
+          return;
+        }
+        localStorage.setItem(FB_CONFIG_KEY, JSON.stringify({ config, docId }));
+        await connectFirestore(config, docId);
+        window.closeSyncModal();
+      } catch (e) {
+        alert('Config 파싱 오류가 발생했습니다. 중괄호 { } 안의 내용을 확인해주세요.');
+      }
+    };
+
+    window.disconnectFirebase = async () => {
+      if (!confirm('클라우드 실시간 연동을 해제하고 로컬 모드로 전환할까요?')) return;
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+        unsubscribeSnapshot = null;
+      }
+      db = null;
+      localStorage.removeItem(FB_CONFIG_KEY);
+      setSyncBadge('local', '로컬 모드 (연동 설정)');
+      window.closeSyncModal();
+    };
+
+    window.forcePushToCloud = async () => {
+      if (!confirm('클라우드의 데이터를 현재 기기의 데이터로 덮어쓸까요?')) return;
+      await pushToCloud();
+      alert('클라우드에 현재 기기 데이터가 반영되었습니다.');
+    };
+
+    window.exportDataCode = async () => {
+      const dataStr = JSON.stringify(state);
+      await navigator.clipboard.writeText(dataStr);
+      alert('모든 파트의 연습 기록이 클립보드에 복사되었습니다!');
+    };
+
+    window.importDataCode = () => {
+      const input = prompt('복사해 둔 백업 데이터 코드를 여기에 붙여넣으세요:');
+      if (!input) return;
+      try {
+        const parsed = JSON.parse(input);
+        state.parts = normalizeDataObject(parsed);
+        saveState();
+        alert('데이터를 성공적으로 불러왔습니다!');
+        window.closeSyncModal();
+      } catch (e) {
+        alert('올바르지 않은 데이터 코드입니다.');
+      }
+    };
+
+    // 초기 실행
+    loadLocalState();
+    renderAll();
+    initFirebaseFromSaved();
+  </script>
+</body>
+</html>
