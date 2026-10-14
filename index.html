@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
-  <title>Band Practice & Habit Dashboard</title>
+  <title>Band Setlist & Practice Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -17,21 +17,26 @@
     .card-bg { background-color: #1e293b; border: 1px solid #334155; }
     .day-btn.active { border-color: #38bdf8; background-color: rgba(56, 189, 248, 0.15); }
     .part-tab.active { background-color: #1e293b; border-color: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+    /* 커스텀 스크롤바 */
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #0f172a; border-radius: 8px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #475569; }
   </style>
 </head>
 <body class="min-h-screen pb-20">
 
-  <!-- 상단 헤더 & 요약 -->
+  <!-- 상단 헤더 & 네비게이션 -->
   <header class="border-b border-slate-800 bg-slate-900/95 backdrop-blur sticky top-0 z-20">
     <div class="max-w-4xl mx-auto px-4 py-3.5 space-y-3">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <div class="flex items-center gap-3">
-          <div id="partHeaderIcon" class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl shrink-0">
-            <i class="fa-solid fa-drum"></i>
+          <div id="partHeaderIcon" class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 text-xl shrink-0">
+            <i class="fa-solid fa-compact-disc"></i>
           </div>
           <div>
             <div class="flex flex-wrap items-center gap-2">
-              <h1 class="text-base sm:text-lg font-bold tracking-tight text-white" id="partHeaderTitle">BAND ROUTINE TRACKER</h1>
+              <h1 class="text-base sm:text-lg font-bold tracking-tight text-white" id="partHeaderTitle">BAND SETLIST & LOUNGE</h1>
               <!-- 동기화 상태 배지 -->
               <button onclick="window.openSyncModal()" id="syncStatusBadge"
                 class="text-[11px] px-2.5 py-0.5 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:border-sky-400 transition flex items-center gap-1.5">
@@ -39,12 +44,12 @@
                 <span id="syncStatusText">로컬 모드 (연동 설정)</span>
               </button>
             </div>
-            <p class="text-xs text-slate-400 mt-0.5" id="currentWeekRange">일요일 레슨/주간 주기 (일 ~ 토)</p>
+            <p class="text-xs text-slate-400 mt-0.5" id="currentWeekRange">합주곡 관리 및 파트별 연습 대시보드</p>
           </div>
         </div>
 
-        <!-- 스탯 배지 -->
-        <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+        <!-- 우측 스탯 배지 (합주곡 뷰 vs 개인 파트 뷰에 따라 자동 전환) -->
+        <div id="partStatsBadges" class="hidden items-center gap-2.5 w-full sm:w-auto justify-end">
           <div class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2">
             <i class="fa-solid fa-fire text-orange-500 text-base animate-pulse"></i>
             <div>
@@ -60,119 +65,275 @@
             </div>
           </div>
         </div>
+
+        <div id="loungeStatsBadges" class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          <div class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2">
+            <i class="fa-solid fa-star text-amber-400 text-sm"></i>
+            <div>
+              <div class="text-[10px] text-slate-400 font-medium uppercase">확정 합주곡</div>
+              <div class="text-xs sm:text-sm font-bold text-white"><span id="setlistCountBadge">3</span>곡</div>
+            </div>
+          </div>
+          <div class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2">
+            <i class="fa-solid fa-thumbs-up text-sky-400 text-sm"></i>
+            <div>
+              <div class="text-[10px] text-slate-400 font-medium uppercase">추천 투표중</div>
+              <div class="text-xs sm:text-sm font-bold text-white"><span id="candidateCountBadge">0</span>곡</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- 파트 선택 탭 (드럼 / 베이스 / 일렉 / 보컬) -->
-      <div class="grid grid-cols-4 gap-2 pt-1" id="partTabsContainer">
+      <!-- 상단 5개 탭 (합주곡 라운지 + 4개 악기 파트) -->
+      <div class="grid grid-cols-5 gap-1.5 sm:gap-2 pt-1" id="partTabsContainer">
         <!-- JS 렌더링 -->
       </div>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 mt-5 space-y-5">
+  <main class="max-w-4xl mx-auto px-4 mt-5">
 
-    <!-- 주간 캘린더 바 (일요일 ~ 토요일) -->
-    <section class="card-bg rounded-2xl p-4 shadow-lg">
-      <div class="flex justify-between items-center mb-3">
-        <div class="flex items-center gap-2">
-          <button onclick="window.shiftWeek(-7)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs">
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-          <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            <i class="fa-regular fa-calendar-check mr-1 text-sky-400"></i> <span id="calendarPartLabel">드럼</span> 주간 스탬프
-          </span>
-          <button onclick="window.shiftWeek(7)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs">
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
-        </div>
-        <button onclick="window.goToToday()" class="text-xs px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 font-medium">
-          오늘로 이동
-        </button>
-      </div>
-      <div class="grid grid-cols-7 gap-1.5 sm:gap-2" id="weekDaysGrid">
-        <!-- JS 렌더링 -->
-      </div>
-    </section>
+    <!-- ========================================== -->
+    <!-- 뷰 1: 🎵 합주곡 & 선곡 투표 라운지 (첫 화면) -->
+    <!-- ========================================== -->
+    <div id="bandLoungeView" class="space-y-6">
 
-    <!-- 선택된 날짜 상태바 & 진행률 -->
-    <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4">
-      <div>
-        <div class="flex items-center gap-2">
-          <h2 class="text-base sm:text-lg font-bold text-white" id="selectedDateTitle">오늘의 연습</h2>
-          <span id="lessonDayBadge" class="hidden px-2 py-0.5 text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full">
-            🔥 주간 점검 / 레슨 데이
-          </span>
-        </div>
-        <p class="text-xs text-slate-400 mt-0.5">체크박스를 눌러 완료 표시하고, 도달한 템포(BPM)나 진행 상태를 기록하세요.</p>
-      </div>
-      <div class="w-full sm:w-48">
-        <div class="flex justify-between text-xs mb-1">
-          <span class="text-slate-400">일일 진행도</span>
-          <span class="font-bold text-emerald-400" id="dailyProgressText">0 / 0 (0%)</span>
-        </div>
-        <div class="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
-          <div id="dailyProgressBar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 1. 이번 주 레슨 숙제 / 주간 중점 목표 섹션 -->
-    <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
-      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/80 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-amber-400" id="hwDot"></span>
-          <h3 class="text-base font-bold text-white" id="hwSectionTitle">이번 주 레슨 숙제 & 주간 목표</h3>
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="window.toggleRawNoteModal()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
-            <i class="fa-regular fa-clipboard mr-1"></i> 레슨 노트 일괄 붙여넣기
-          </button>
-          <button onclick="window.openAddModal('homework')" class="text-xs px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold transition">
-            <i class="fa-solid fa-plus mr-1"></i> 목표/숙제 추가
+      <!-- 1-A. 현재 확정 합주곡 (Setlist) -->
+      <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 border-t-2 border-t-indigo-500">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/80 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold">
+              SETLIST
+            </span>
+            <div>
+              <h2 class="text-base font-bold text-white">현재 진행 중인 합주곡</h2>
+              <p class="text-[11px] text-slate-400">우리 밴드가 현재 맞출 합주곡 목록입니다. 곡별 주의사항이나 메모를 적어두세요.</p>
+            </div>
+          </div>
+          <button onclick="window.openSongModal('setlist')" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-semibold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> 합주곡 직접 추가
           </button>
         </div>
-      </div>
 
-      <div id="homeworkList" class="space-y-3">
-        <!-- JS 렌더링 -->
-      </div>
-    </section>
-
-    <!-- 2. 개인 데일리 루틴 섹션 -->
-    <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
-      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/80 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-          <h3 class="text-base font-bold text-white" id="rtSectionTitle">개인 데일리 루틴</h3>
+        <div id="setlistContainer" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- JS 렌더링 -->
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="window.resetDefaultRoutines()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="현재 파트 기본 루틴으로 초기화">
-            <i class="fa-solid fa-rotate-left"></i>
-          </button>
-          <button onclick="window.openAddModal('routine')" class="text-xs px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition">
-            <i class="fa-solid fa-plus mr-1"></i> 루틴 추가
+      </section>
+
+      <!-- 1-B. 추천곡 대기열 & 4인 동의 투표 보드 -->
+      <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/80 pb-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+              <h2 class="text-base font-bold text-white">다음 합주곡 추천 & 투표 대기열</h2>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">
+              각 파트 버튼(<span class="text-amber-300">🥁드럼</span>·<span class="text-emerald-300">🎸베이스</span>·<span class="text-violet-300">⚡일렉</span>·<span class="text-rose-300">🎤보컬</span>)을 눌러 좋아요를 표시하세요! <strong>4명 모두 동의(4/4)하면 확정 합주곡으로 자동 등록</strong>됩니다.
+            </p>
+          </div>
+          <button onclick="window.openSongModal('candidate')" class="text-xs px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold transition shrink-0 self-start sm:self-center">
+            <i class="fa-solid fa-music mr-1"></i> 새 추천곡 올리기
           </button>
         </div>
-      </div>
 
-      <div id="routineList" class="space-y-3">
-        <!-- JS 렌더링 -->
-      </div>
-    </section>
+        <!-- 검색 & 정렬 컨트롤 바 (곡이 많아질 때 대비) -->
+        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass text-slate-500 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="candidateSearchInput" oninput="window.renderLounge()"
+              placeholder="추천곡 제목, 아티스트, 코멘트 검색..."
+              class="w-full bg-slate-800/90 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-400">
+          </div>
+          <div class="flex items-center justify-between sm:justify-end gap-1.5">
+            <span class="text-[11px] text-slate-400 mr-1">정렬:</span>
+            <button onclick="window.setCandidateSort('votes')" id="sortVotesBtn"
+              class="text-xs px-2.5 py-1 rounded-lg font-medium transition bg-sky-500/20 text-sky-300 border border-sky-500/30">
+              🔥 인기순 (득표순)
+            </button>
+            <button onclick="window.setCandidateSort('newest')" id="sortNewestBtn"
+              class="text-xs px-2.5 py-1 rounded-lg font-medium transition bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200">
+              🕒 최신 등록순
+            </button>
+          </div>
+        </div>
 
-    <!-- 일일 한줄 피드백 메모 -->
-    <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-2">
-      <label class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1.5">
-        <i class="fa-solid fa-pen-nib text-sky-400"></i> <span id="memoPartLabel">드럼</span> 선택일 연습 코멘트 / 피드백
-      </label>
-      <textarea id="dailyMemoInput" rows="2" onchange="window.saveDailyMemo()"
-        placeholder="오늘 연습 중 느낀 점, 톤/자세/박자 신경 쓸 부분, 합주곡 코멘트 등을 자유롭게 메모하세요."
-        class="w-full rounded-xl bg-slate-900/90 border border-slate-700 p-3 text-sm text-slate-200 focus:outline-none focus:border-sky-400"></textarea>
-    </section>
+        <!-- 추천곡 스크롤 리스트 (다수 곡 적재에 최적화된 컴팩트 그리드 + 스크롤) -->
+        <div id="candidatesContainer" class="custom-scroll max-h-[520px] overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- JS 렌더링 -->
+        </div>
+      </section>
+
+      <!-- 파트 바로가기 안내 배너 -->
+      <section class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="text-xs text-slate-300">
+          <i class="fa-solid fa-circle-info text-sky-400 mr-1.5"></i>
+          개인 레슨 숙제와 일일 루틴 체크는 상단 탭에서 <strong>본인의 악기 파트(드럼·베이스·일렉·보컬)</strong>를 눌러 이동하세요!
+        </div>
+        <div class="flex gap-1.5 shrink-0">
+          <button onclick="window.selectPart('drum')" class="text-xs px-2.5 py-1.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 font-medium">🥁 드럼</button>
+          <button onclick="window.selectPart('bass')" class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 font-medium">🎸 베이스</button>
+          <button onclick="window.selectPart('guitar')" class="text-xs px-2.5 py-1.5 rounded-lg bg-violet-500/10 text-violet-300 border border-violet-500/30 hover:bg-violet-500/20 font-medium">⚡ 일렉</button>
+          <button onclick="window.selectPart('vocal')" class="text-xs px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 font-medium">🎤 보컬</button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 뷰 2: 🥁🎸⚡🎤 파트별 개인 연습 대시보드 뷰 -->
+    <!-- ========================================== -->
+    <div id="partPracticeView" class="hidden space-y-5">
+
+      <!-- 주간 캘린더 바 (일요일 ~ 토요일) -->
+      <section class="card-bg rounded-2xl p-4 shadow-lg">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center gap-2">
+            <button onclick="window.shiftWeek(-7)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <i class="fa-regular fa-calendar-check mr-1 text-sky-400"></i> <span id="calendarPartLabel">드럼</span> 주간 스탬프
+            </span>
+            <button onclick="window.shiftWeek(7)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+          <button onclick="window.goToToday()" class="text-xs px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 font-medium">
+            오늘로 이동
+          </button>
+        </div>
+        <div class="grid grid-cols-7 gap-1.5 sm:gap-2" id="weekDaysGrid">
+          <!-- JS 렌더링 -->
+        </div>
+      </section>
+
+      <!-- 선택된 날짜 상태바 & 진행률 -->
+      <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base sm:text-lg font-bold text-white" id="selectedDateTitle">오늘의 연습</h2>
+            <span id="lessonDayBadge" class="hidden px-2 py-0.5 text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full">
+              🔥 주간 점검 / 레슨 데이
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">체크박스를 눌러 완료 표시하고, 도달한 템포(BPM)나 진행 상태를 기록하세요.</p>
+        </div>
+        <div class="w-full sm:w-48">
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-400">일일 진행도</span>
+            <span class="font-bold text-emerald-400" id="dailyProgressText">0 / 0 (0%)</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
+            <div id="dailyProgressBar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 1. 이번 주 레슨 숙제 / 주간 중점 목표 섹션 -->
+      <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/80 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400" id="hwDot"></span>
+            <h3 class="text-base font-bold text-white" id="hwSectionTitle">이번 주 레슨 숙제 & 주간 목표</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="window.toggleRawNoteModal()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
+              <i class="fa-regular fa-clipboard mr-1"></i> 레슨 노트 일괄 붙여넣기
+            </button>
+            <button onclick="window.openAddModal('homework')" class="text-xs px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold transition">
+              <i class="fa-solid fa-plus mr-1"></i> 목표/숙제 추가
+            </button>
+          </div>
+        </div>
+
+        <div id="homeworkList" class="space-y-3">
+          <!-- JS 렌더링 -->
+        </div>
+      </section>
+
+      <!-- 2. 개인 데일리 루틴 섹션 -->
+      <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/80 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+            <h3 class="text-base font-bold text-white" id="rtSectionTitle">개인 데일리 루틴</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="window.resetDefaultRoutines()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="현재 파트 기본 루틴으로 초기화">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <button onclick="window.openAddModal('routine')" class="text-xs px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition">
+              <i class="fa-solid fa-plus mr-1"></i> 루틴 추가
+            </button>
+          </div>
+        </div>
+
+        <div id="routineList" class="space-y-3">
+          <!-- JS 렌더링 -->
+        </div>
+      </section>
+
+      <!-- 일일 한줄 피드백 메모 -->
+      <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-2">
+        <label class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1.5">
+          <i class="fa-solid fa-pen-nib text-sky-400"></i> <span id="memoPartLabel">드럼</span> 선택일 연습 코멘트 / 피드백
+        </label>
+        <textarea id="dailyMemoInput" rows="2" onchange="window.saveDailyMemo()"
+          placeholder="오늘 연습 중 느낀 점, 톤/자세/박자 신경 쓸 부분, 합주곡 코멘트 등을 자유롭게 메모하세요."
+          class="w-full rounded-xl bg-slate-900/90 border border-slate-700 p-3 text-sm text-slate-200 focus:outline-none focus:border-sky-400"></textarea>
+      </section>
+
+    </div>
 
   </main>
 
-  <!-- 모달 1: 항목 추가 모달 -->
+  <!-- 모달 A: 추천곡 / 합주곡 등록 모달 -->
+  <div id="songModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center">
+        <h4 class="font-bold text-white text-base" id="songModalTitle">새 추천곡 올리기</h4>
+        <button onclick="window.closeSongModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">아티스트 (가수/밴드명) *</label>
+          <input type="text" id="songArtistInput" placeholder="예: 히게단 / 넬 / 험프백"
+            class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">곡 제목 *</label>
+          <input type="text" id="songTitleInput" placeholder="예: Pretender / 1:03 / 친애하는"
+            class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400">
+        </div>
+        <div id="songProposerWrapper">
+          <label class="text-xs text-slate-400 block mb-1">추천하는 파트 (작성자 표시 및 자동 첫 투표)</label>
+          <select id="songProposerSelect" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400">
+            <option value="drum">🥁 드럼</option>
+            <option value="bass">🎸 베이스</option>
+            <option value="guitar">⚡ 일렉기타</option>
+            <option value="vocal">🎤 보컬</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">한줄 코멘트 / 합주 포인트</label>
+          <input type="text" id="songNoteInput" placeholder="예: 신나는 곡! / 원키 진행 / 인트로 드럼 필인"
+            class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">유튜브 / 음원 참고 링크 (선택)</label>
+          <input type="url" id="songLinkInput" placeholder="https://youtube.com/..."
+            class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-400">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="window.closeSongModal()" class="px-4 py-2 rounded-lg text-xs bg-slate-700 text-slate-300 hover:bg-slate-600">취소</button>
+        <button onclick="window.confirmAddSong()" class="px-4 py-2 rounded-lg text-xs bg-sky-500 text-slate-950 font-bold hover:bg-sky-400">등록하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 모달 1: 연습 항목 추가 모달 -->
   <div id="addModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center">
@@ -246,7 +407,7 @@
 
       <div class="space-y-3 text-xs text-slate-300">
         <p class="leading-relaxed text-slate-400">
-          밴드 멤버들과 동일한 <code class="text-amber-300">firebaseConfig</code>와 문서 ID를 입력하면, <strong>드럼·베이스·일렉·보컬 4개 파트의 현황이 모두 실시간으로 동기화</strong>됩니다.
+          밴드 멤버들과 동일한 <code class="text-amber-300">firebaseConfig</code>와 문서 ID를 입력하면, <strong>합주곡 투표와 4개 파트의 연습 현황이 모두 실시간으로 동기화</strong>됩니다.
         </p>
 
         <div>
@@ -308,18 +469,48 @@
 
     const STORAGE_KEY = 'drum_habit_dashboard_v2';
     const FB_CONFIG_KEY = 'drum_habit_fb_config_v2';
-    const SELECTED_PART_KEY = 'band_selected_part_v1';
+    const SELECTED_PART_KEY = 'band_selected_tab_v2';
 
-    // 파트별 메타 정보 및 기본 템플릿
+    // 요청하신 기본 확정 합주곡 3곡
+    const DEFAULT_SETLIST = [
+      {
+        id: 'set-1',
+        artist: '히게단 (Official髭男dism)',
+        title: 'Pretender (프리텐더)',
+        note: '현재 합주곡 · 인트로 아르페지오 및 리듬 싱크 맞출 것',
+        link: ''
+      },
+      {
+        id: 'set-2',
+        artist: '넬 (NELL)',
+        title: '1:03',
+        note: '현재 합주곡 · 공간계 톤 및 후반부 다이내믹 빌드업 집중',
+        link: ''
+      },
+      {
+        id: 'set-3',
+        artist: '험프백 (Hump Back)',
+        title: '친애하는 (拝啓、少年よ)',
+        note: '현재 합주곡 · 스트레이트 8비트 질주감 및 코러스 백업',
+        link: ''
+      }
+    ];
+
+    const DEFAULT_CANDIDATES = [];
+
+    // 파트별 메타 정보
     const PART_META = {
       drum: {
         id: 'drum',
         name: '드럼',
+        short: '드럼',
         eng: 'DRUM',
+        emoji: '🥁',
         icon: 'fa-solid fa-drum',
         accentText: 'text-amber-400',
         accentBg: 'bg-amber-500/20',
         accentBorder: 'border-amber-500/40',
+        voteActiveClass: 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold',
         rawNote: `1. 더블킥 연습 슬라이드 연습으로도 꼭 추가해서 (느린템포에서도 가능하게) 갱신입니다
 1-1. RLKK(슬라이드) / RLK & KRL / KLR = 총 네개 패턴도 연습입니다
 *느린템포에서부터 연습이라는 개념보단 느린템포에서도 슬라이드가 가능하고 3개짜리 연습은 자율템포입니다 가능한 템포까지 올려보세요!
@@ -354,11 +545,14 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
       bass: {
         id: 'bass',
         name: '베이스',
+        short: '베이스',
         eng: 'BASS',
+        emoji: '🎸',
         icon: 'fa-solid fa-guitar',
         accentText: 'text-emerald-400',
         accentBg: 'bg-emerald-500/20',
         accentBorder: 'border-emerald-500/40',
+        voteActiveClass: 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold',
         rawNote: `이번 주 베이스 레슨 숙제나 개인 목표를 이곳에 붙여넣고 관리하세요!`,
         defaultHomeworks: [
           { id: 'bass-hw-1', title: '이번 주 레슨 숙제 / 중점 연습 패턴', sub: '우측 상단 [목표/숙제 추가] 또는 [레슨 노트 일괄 붙여넣기]로 자유롭게 수정하세요.', target: '목표 BPM 기록' }
@@ -373,11 +567,14 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
       guitar: {
         id: 'guitar',
         name: '일렉기타',
+        short: '일렉',
         eng: 'ELECTRIC GUITAR',
+        emoji: '⚡',
         icon: 'fa-solid fa-bolt',
         accentText: 'text-violet-400',
         accentBg: 'bg-violet-500/20',
         accentBorder: 'border-violet-500/40',
+        voteActiveClass: 'bg-violet-500/20 border-violet-400 text-violet-300 font-bold',
         rawNote: `이번 주 일렉기타 레슨 숙제나 카피 목표를 이곳에 붙여넣고 관리하세요!`,
         defaultHomeworks: [
           { id: 'gt-hw-1', title: '이번 주 레슨 숙제 / 솔로·리프 과업', sub: '우측 상단 [목표/숙제 추가] 또는 [레슨 노트 일괄 붙여넣기]로 자유롭게 수정하세요.', target: '목표 BPM 기록' }
@@ -392,11 +589,14 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
       vocal: {
         id: 'vocal',
         name: '보컬',
+        short: '보컬',
         eng: 'VOCAL',
+        emoji: '🎤',
         icon: 'fa-solid fa-microphone-lines',
         accentText: 'text-rose-400',
         accentBg: 'bg-rose-500/20',
         accentBorder: 'border-rose-500/40',
+        voteActiveClass: 'bg-rose-500/20 border-rose-400 text-rose-300 font-bold',
         rawNote: `이번 주 보컬 레슨 숙제나 곡 연습 포인트를 이곳에 붙여넣고 관리하세요!`,
         defaultHomeworks: [
           { id: 'vc-hw-1', title: '이번 주 보컬 레슨 숙제 / 곡 구간 집중 연습', sub: '우측 상단 [목표/숙제 추가] 또는 [레슨 노트 일괄 붙여넣기]로 자유롭게 수정하세요.', target: '레슨 포인트 적용' }
@@ -410,8 +610,12 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
       }
     };
 
-    let currentPart = localStorage.getItem(SELECTED_PART_KEY) || 'drum';
-    if (!PART_META[currentPart]) currentPart = 'drum';
+    // 기본 첫 화면을 'lounge'(합주곡 라운지)로 설정
+    let currentPart = localStorage.getItem(SELECTED_PART_KEY) || 'lounge';
+    if (currentPart !== 'lounge' && !PART_META[currentPart]) currentPart = 'lounge';
+
+    let candidateSortBy = 'votes'; // 'votes' | 'newest'
+    let currentSongModalMode = 'candidate'; // 'candidate' | 'setlist'
 
     function createInitialPartsData() {
       const parts = {};
@@ -428,6 +632,10 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
 
     let state = {
       selectedDate: getFormatDate(new Date()),
+      bandSongs: {
+        setlist: JSON.parse(JSON.stringify(DEFAULT_SETLIST)),
+        candidates: JSON.parse(JSON.stringify(DEFAULT_CANDIDATES))
+      },
       parts: createInitialPartsData(),
       updatedAt: 0
     };
@@ -444,7 +652,6 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
       return `${y}-${m}-${d}`;
     }
 
-    // 기존 단일 드럼 데이터(homeworks, routines, logs)가 있으면 parts.drum으로 무손실 마이그레이션
     function normalizeDataObject(rawObj) {
       const baseParts = createInitialPartsData();
       if (rawObj.parts) {
@@ -459,7 +666,6 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
           }
         });
       }
-      // 만약 구버전 루트 레벨 드럼 데이터가 존재하고 parts.drum 로그가 비어있거나 구버전에서 넘어온 경우 병합
       if (rawObj.homeworks || rawObj.routines || rawObj.logs) {
         if (!rawObj.parts || !rawObj.parts.drum) {
           baseParts.drum = {
@@ -470,14 +676,25 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
           };
         }
       }
-      return baseParts;
+
+      const bandSongs = {
+        setlist: Array.isArray(rawObj.bandSongs?.setlist)
+          ? rawObj.bandSongs.setlist
+          : JSON.parse(JSON.stringify(DEFAULT_SETLIST)),
+        candidates: Array.isArray(rawObj.bandSongs?.candidates)
+          ? rawObj.bandSongs.candidates
+          : []
+      };
+
+      return { parts: baseParts, bandSongs };
     }
 
     function getActivePartData() {
-      if (!state.parts[currentPart]) {
-        state.parts[currentPart] = createInitialPartsData()[currentPart];
+      const targetPart = PART_META[currentPart] ? currentPart : 'drum';
+      if (!state.parts[targetPart]) {
+        state.parts[targetPart] = createInitialPartsData()[targetPart];
       }
-      return state.parts[currentPart];
+      return state.parts[targetPart];
     }
 
     function loadLocalState() {
@@ -485,7 +702,9 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          state.parts = normalizeDataObject(parsed);
+          const normalized = normalizeDataObject(parsed);
+          state.parts = normalized.parts;
+          state.bandSongs = normalized.bandSongs;
           state.updatedAt = parsed.updatedAt || 0;
         } catch (e) {
           console.error(e);
@@ -572,10 +791,11 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
         if (!snap.exists()) {
           await pushToCloud();
         } else {
-          // 만약 클라우드에 구버전(단일 드럼) 데이터만 있고 parts 필드가 아직 없다면 마이그레이션 후 저장
           const cloudData = snap.data();
-          if (!cloudData.parts && (cloudData.homeworks || cloudData.logs)) {
-            state.parts = normalizeDataObject(cloudData);
+          if (!cloudData.parts || !cloudData.bandSongs) {
+            const normalized = normalizeDataObject(cloudData);
+            state.parts = normalized.parts;
+            state.bandSongs = normalized.bandSongs;
             await pushToCloud();
           }
         }
@@ -584,7 +804,9 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
           if (docSnap.exists()) {
             const cloudData = docSnap.data();
             isRemoteUpdating = true;
-            state.parts = normalizeDataObject(cloudData);
+            const normalized = normalizeDataObject(cloudData);
+            state.parts = normalized.parts;
+            state.bandSongs = normalized.bandSongs;
             state.updatedAt = cloudData.updatedAt ?? Date.now();
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             renderAll();
@@ -610,9 +832,9 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
         if (!savedConfigRaw) return;
         const { docId } = JSON.parse(savedConfigRaw);
         const docRef = doc(db, 'drum_dashboard', docId || 'my_drum_tracker');
-        // 하위 호환성을 위해 drum 데이터는 루트에도 함께 유지하고 parts 전체를 저장
         const drumData = state.parts.drum;
         await setDoc(docRef, {
+          bandSongs: state.bandSongs,
           parts: state.parts,
           rawLessonNote: drumData.rawLessonNote,
           homeworks: drumData.homeworks,
@@ -684,20 +906,62 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
       return streak;
     }
 
+    // --- 상단 탭 및 뷰 전환 렌더링 ---
     function renderPartTabs() {
-      const meta = PART_META[currentPart];
+      const isLounge = currentPart === 'lounge';
       const headerIcon = document.getElementById('partHeaderIcon');
-      headerIcon.className = `w-10 h-10 rounded-xl ${meta.accentBg} border ${meta.accentBorder} flex items-center justify-center ${meta.accentText} text-xl shrink-0`;
-      headerIcon.innerHTML = `<i class="${meta.icon}"></i>`;
+      const partStats = document.getElementById('partStatsBadges');
+      const loungeStats = document.getElementById('loungeStatsBadges');
+      const loungeView = document.getElementById('bandLoungeView');
+      const practiceView = document.getElementById('partPracticeView');
 
-      document.getElementById('partHeaderTitle').textContent = `${meta.eng} ROUTINE TRACKER`;
-      document.getElementById('calendarPartLabel').textContent = meta.name;
-      document.getElementById('memoPartLabel').textContent = meta.name;
-      document.getElementById('hwSectionTitle').textContent = `이번 주 ${meta.name} 레슨 숙제 & 주간 목표`;
-      document.getElementById('rtSectionTitle').textContent = `${meta.name} 개인 데일리 루틴`;
+      if (isLounge) {
+        headerIcon.className = 'w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 text-xl shrink-0';
+        headerIcon.innerHTML = '<i class="fa-solid fa-compact-disc"></i>';
+        document.getElementById('partHeaderTitle').textContent = 'BAND SETLIST & LOUNGE';
+        document.getElementById('currentWeekRange').textContent = '합주곡 기록 · 추천곡 투표 (4인 전원 동의 시 합주곡 자동 승격)';
+        partStats.classList.add('hidden');
+        partStats.classList.remove('flex');
+        loungeStats.classList.remove('hidden');
+        loungeStats.classList.add('flex');
+        loungeView.classList.remove('hidden');
+        practiceView.classList.add('hidden');
+      } else {
+        const meta = PART_META[currentPart];
+        headerIcon.className = `w-10 h-10 rounded-xl ${meta.accentBg} border ${meta.accentBorder} flex items-center justify-center ${meta.accentText} text-xl shrink-0`;
+        headerIcon.innerHTML = `<i class="${meta.icon}"></i>`;
+        document.getElementById('partHeaderTitle').textContent = `${meta.eng} ROUTINE TRACKER`;
+        document.getElementById('calendarPartLabel').textContent = meta.name;
+        document.getElementById('memoPartLabel').textContent = meta.name;
+        document.getElementById('hwSectionTitle').textContent = `이번 주 ${meta.name} 레슨 숙제 & 주간 목표`;
+        document.getElementById('rtSectionTitle').textContent = `${meta.name} 개인 데일리 루틴`;
+
+        loungeStats.classList.add('hidden');
+        loungeStats.classList.remove('flex');
+        partStats.classList.remove('hidden');
+        partStats.classList.add('flex');
+        loungeView.classList.add('hidden');
+        practiceView.classList.remove('hidden');
+      }
+
+      const setlistCount = state.bandSongs?.setlist?.length || 0;
+      const candCount = state.bandSongs?.candidates?.length || 0;
+      document.getElementById('setlistCountBadge').textContent = setlistCount;
+      document.getElementById('candidateCountBadge').textContent = candCount;
 
       const container = document.getElementById('partTabsContainer');
-      container.innerHTML = Object.keys(PART_META).map(key => {
+      const loungeTabHTML = `
+        <button onclick="window.selectPart('lounge')"
+          class="part-tab flex flex-col sm:flex-row items-center justify-between gap-1 px-2.5 py-2.5 rounded-xl border transition ${isLounge ? 'active border-indigo-400 bg-slate-800' : 'border-slate-800 bg-slate-900/60 hover:bg-slate-800/60 text-slate-400'}">
+          <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-compact-disc ${isLounge ? 'text-indigo-400' : 'text-slate-400'} text-xs sm:text-sm"></i>
+            <span class="text-[11px] sm:text-xs font-bold ${isLounge ? 'text-white' : 'text-slate-300'}">합주곡</span>
+          </div>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold">${setlistCount}곡</span>
+        </button>
+      `;
+
+      const instTabsHTML = Object.keys(PART_META).map(key => {
         const p = PART_META[key];
         const isActive = key === currentPart;
         const comp = getPartDayCompletion(key, state.selectedDate);
@@ -705,21 +969,156 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
 
         return `
           <button onclick="window.selectPart('${key}')"
-            class="part-tab flex flex-col sm:flex-row items-center justify-between gap-1.5 px-3 py-2.5 rounded-xl border transition ${isActive ? 'active border-white bg-slate-800' : 'border-slate-800 bg-slate-900/60 hover:bg-slate-800/60 text-slate-400'}">
-            <div class="flex items-center gap-2">
-              <i class="${p.icon} ${isActive ? p.accentText : 'text-slate-400'} text-sm"></i>
-              <span class="text-xs sm:text-sm font-bold ${isActive ? 'text-white' : 'text-slate-300'}">${p.name}</span>
+            class="part-tab flex flex-col sm:flex-row items-center justify-between gap-1 px-2.5 py-2.5 rounded-xl border transition ${isActive ? 'active border-white bg-slate-800' : 'border-slate-800 bg-slate-900/60 hover:bg-slate-800/60 text-slate-400'}">
+            <div class="flex items-center gap-1.5">
+              <i class="${p.icon} ${isActive ? p.accentText : 'text-slate-400'} text-xs sm:text-sm"></i>
+              <span class="text-[11px] sm:text-xs font-bold ${isActive ? 'text-white' : 'text-slate-300'}">${p.short}</span>
             </div>
-            <div class="flex items-center gap-1 text-[11px] font-semibold ${hasPractice ? 'text-emerald-400' : 'text-slate-500'}">
-              ${hasPractice ? '<i class="fa-solid fa-fire text-orange-400 text-[10px]"></i>' : ''}
+            <div class="flex items-center gap-1 text-[10px] font-semibold ${hasPractice ? 'text-emerald-400' : 'text-slate-500'}">
+              ${hasPractice ? '<i class="fa-solid fa-fire text-orange-400 text-[9px]"></i>' : ''}
               <span>${comp.done}/${comp.total}</span>
             </div>
           </button>
         `;
       }).join('');
+
+      container.innerHTML = loungeTabHTML + instTabsHTML;
     }
 
+    // --- 🎵 합주곡 & 추천곡 투표 라운지 렌더링 ---
+    window.renderLounge = function() {
+      const setlist = state.bandSongs?.setlist || [];
+      const candidates = state.bandSongs?.candidates || [];
+
+      // 1. 확정 합주곡 렌더링
+      const setlistEl = document.getElementById('setlistContainer');
+      if (setlist.length === 0) {
+        setlistEl.innerHTML = `<div class="col-span-full text-center py-6 text-xs text-slate-500">등록된 확정 합주곡이 없습니다.</div>`;
+      } else {
+        setlistEl.innerHTML = setlist.map((song, idx) => `
+          <div class="p-3.5 rounded-xl bg-slate-900/90 border border-indigo-500/30 flex flex-col justify-between gap-2.5 relative group">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  SET #${idx + 1}
+                </span>
+                <div class="flex items-center gap-1.5">
+                  ${song.link ? `<a href="${song.link}" target="_blank" class="text-xs text-sky-400 hover:text-sky-300 px-1.5 py-0.5 rounded bg-slate-800" title="링크 열기"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : ''}
+                  <button onclick="window.demoteToCandidate('${song.id}')" title="추천 대기열로 되돌리기" class="text-slate-500 hover:text-amber-400 text-xs px-1">
+                    <i class="fa-solid fa-arrow-down"></i>
+                  </button>
+                  <button onclick="window.deleteSong('setlist', '${song.id}')" title="삭제" class="text-slate-500 hover:text-rose-400 text-xs px-1">
+                    <i class="fa-regular fa-trash-can"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="mt-2">
+                <div class="text-xs text-indigo-300 font-semibold">${song.artist}</div>
+                <div class="text-sm sm:text-base font-bold text-white leading-snug mt-0.5">${song.title}</div>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-slate-800/80">
+              <input type="text" value="${song.note || ''}" placeholder="합주 메모 (키 변경, 템포 등 입력)"
+                onchange="window.updateSetlistNote('${song.id}', this.value)"
+                class="w-full bg-slate-800/70 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-indigo-400">
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // 2. 추천곡 필터링 및 정렬
+      const query = (document.getElementById('candidateSearchInput')?.value || '').trim().toLowerCase();
+      let filtered = candidates.filter(c => {
+        if (!query) return true;
+        return (c.title || '').toLowerCase().includes(query) ||
+               (c.artist || '').toLowerCase().includes(query) ||
+               (c.note || '').toLowerCase().includes(query);
+      });
+
+      filtered.sort((a, b) => {
+        const votesA = Object.values(a.votes || {}).filter(Boolean).length;
+        const votesB = Object.values(b.votes || {}).filter(Boolean).length;
+        if (candidateSortBy === 'votes') {
+          if (votesB !== votesA) return votesB - votesA;
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        } else {
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        }
+      });
+
+      const candEl = document.getElementById('candidatesContainer');
+      if (filtered.length === 0) {
+        candEl.innerHTML = `
+          <div class="col-span-full py-10 text-center space-y-2 bg-slate-900/40 rounded-xl border border-dashed border-slate-700">
+            <div class="text-slate-400 text-xs font-medium">아직 대기 중인 추천곡이 없습니다.</div>
+            <div class="text-[11px] text-slate-500">우측 상단 <strong>[+ 새 추천곡 올리기]</strong> 버튼을 눌러 하고 싶은 곡을 제안해 보세요! (4명 모두 좋아요를 누르면 위쪽 합주곡으로 자동 승격됩니다)</div>
+          </div>
+        `;
+      } else {
+        candEl.innerHTML = filtered.map(song => {
+          const votes = song.votes || {};
+          const voteCount = ['drum', 'bass', 'guitar', 'vocal'].filter(k => votes[k]).length;
+          const proposerMeta = PART_META[song.proposer];
+
+          const partVoteButtons = ['drum', 'bass', 'guitar', 'vocal'].map(pKey => {
+            const p = PART_META[pKey];
+            const liked = !!votes[pKey];
+            return `
+              <button onclick="window.toggleCandidateVote('${song.id}', '${pKey}')"
+                class="flex-1 py-1.5 px-2 rounded-lg border text-[11px] flex items-center justify-center gap-1 transition ${liked ? p.voteActiveClass : 'bg-slate-800/70 border-slate-700 text-slate-400 hover:border-slate-500'}">
+                <span>${p.emoji}</span>
+                <span>${p.short}</span>
+                ${liked ? '<i class="fa-solid fa-heart text-[10px] ml-0.5"></i>' : ''}
+              </button>
+            `;
+          }).join('');
+
+          return `
+            <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-700/80 hover:border-slate-600 flex flex-col justify-between gap-3 transition">
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${voteCount >= 3 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-sky-400 border border-slate-700'}">
+                      ❤️ ${voteCount} / 4 동의
+                    </span>
+                    ${proposerMeta ? `<span class="text-[10px] text-slate-400">추천: ${proposerMeta.emoji}${proposerMeta.short}</span>` : ''}
+                  </div>
+                  <div class="flex items-center gap-1">
+                    ${song.link ? `<a href="${song.link}" target="_blank" class="text-xs text-sky-400 hover:underline px-1.5 py-0.5 rounded bg-slate-800" title="참고 링크"><i class="fa-brands fa-youtube mr-0.5"></i>듣기</a>` : ''}
+                    <button onclick="window.promoteToSetlist('${song.id}')" title="즉시 합주곡으로 올리기" class="text-[11px] text-slate-400 hover:text-indigo-400 px-1.5 py-0.5">
+                      <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                    <button onclick="window.deleteSong('candidate', '${song.id}')" title="삭제" class="text-xs text-slate-500 hover:text-rose-400 px-1">
+                      <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <span class="text-xs font-semibold text-sky-400">${song.artist}</span>
+                  <h4 class="text-sm font-bold text-white leading-snug">${song.title}</h4>
+                </div>
+                ${song.note ? `<p class="text-xs text-slate-400 bg-slate-800/50 px-2.5 py-1.5 rounded-lg">${song.note}</p>` : ''}
+              </div>
+
+              <!-- 4인 파트별 좋아요 버튼 -->
+              <div class="space-y-1.5 pt-1 border-t border-slate-800">
+                <div class="flex justify-between items-center text-[10px] text-slate-400">
+                  <span>파트별 좋아요 (4명 달성 시 합주곡 자동 등록)</span>
+                  <span class="font-bold text-slate-300">${Math.round((voteCount / 4) * 100)}%</span>
+                </div>
+                <div class="flex gap-1.5">
+                  ${partVoteButtons}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    };
+
     function renderWeekCalendar() {
+      if (currentPart === 'lounge') return;
       const pData = getActivePartData();
       const weekDays = getWeekDates(state.selectedDate);
       const grid = document.getElementById('weekDaysGrid');
@@ -765,6 +1164,7 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
     }
 
     function renderTaskLists() {
+      if (currentPart === 'lounge') return;
       const pData = getActivePartData();
       const meta = PART_META[currentPart];
       const dateStr = state.selectedDate;
@@ -843,13 +1243,174 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
 
     function renderAll() {
       renderPartTabs();
+      window.renderLounge();
       renderWeekCalendar();
       renderTaskLists();
     }
 
-    // --- 전역 핸들러 노출 ---
+    // --- 합주곡 & 추천곡 투표 관련 핸들러 ---
+    window.setCandidateSort = (sortType) => {
+      candidateSortBy = sortType;
+      const votesBtn = document.getElementById('sortVotesBtn');
+      const newestBtn = document.getElementById('sortNewestBtn');
+      if (sortType === 'votes') {
+        votesBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-medium transition bg-sky-500/20 text-sky-300 border border-sky-500/30';
+        newestBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-medium transition bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200';
+      } else {
+        newestBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-medium transition bg-sky-500/20 text-sky-300 border border-sky-500/30';
+        votesBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-medium transition bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200';
+      }
+      window.renderLounge();
+    };
+
+    window.openSongModal = (mode) => {
+      currentSongModalMode = mode;
+      document.getElementById('songModalTitle').textContent =
+        mode === 'setlist' ? '확정 합주곡 직접 추가' : '새 추천곡 올리기 (투표 등록)';
+      document.getElementById('songProposerWrapper').style.display = mode === 'setlist' ? 'none' : 'block';
+      document.getElementById('songArtistInput').value = '';
+      document.getElementById('songTitleInput').value = '';
+      document.getElementById('songNoteInput').value = '';
+      document.getElementById('songLinkInput').value = '';
+      if (PART_META[currentPart]) {
+        document.getElementById('songProposerSelect').value = currentPart;
+      }
+      const modal = document.getElementById('songModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.closeSongModal = () => {
+      const modal = document.getElementById('songModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    window.confirmAddSong = () => {
+      const artist = document.getElementById('songArtistInput').value.trim();
+      const title = document.getElementById('songTitleInput').value.trim();
+      const note = document.getElementById('songNoteInput').value.trim();
+      const link = document.getElementById('songLinkInput').value.trim();
+      const proposer = document.getElementById('songProposerSelect').value;
+
+      if (!artist || !title) {
+        alert('아티스트와 곡 제목을 모두 입력해주세요.');
+        return;
+      }
+
+      if (!state.bandSongs) state.bandSongs = { setlist: [], candidates: [] };
+
+      if (currentSongModalMode === 'setlist') {
+        state.bandSongs.setlist.push({
+          id: 'set-' + Date.now(),
+          artist,
+          title,
+          note: note || '합주곡',
+          link
+        });
+      } else {
+        const initialVotes = { drum: false, bass: false, guitar: false, vocal: false };
+        if (proposer && initialVotes.hasOwnProperty(proposer)) {
+          initialVotes[proposer] = true;
+        }
+        state.bandSongs.candidates.push({
+          id: 'cand-' + Date.now(),
+          artist,
+          title,
+          note,
+          link,
+          proposer,
+          votes: initialVotes,
+          createdAt: Date.now()
+        });
+      }
+
+      window.closeSongModal();
+      saveState();
+    };
+
+    window.toggleCandidateVote = (songId, partKey) => {
+      const candList = state.bandSongs?.candidates || [];
+      const target = candList.find(c => c.id === songId);
+      if (!target) return;
+      if (!target.votes) target.votes = { drum: false, bass: false, guitar: false, vocal: false };
+      target.votes[partKey] = !target.votes[partKey];
+
+      const totalVotes = ['drum', 'bass', 'guitar', 'vocal'].filter(k => target.votes[k]).length;
+
+      // 4명 전원 좋아요 달성 시 확정 합주곡으로 자동 승격!
+      if (totalVotes === 4) {
+        state.bandSongs.candidates = candList.filter(c => c.id !== songId);
+        state.bandSongs.setlist.push({
+          id: 'set-' + Date.now(),
+          artist: target.artist,
+          title: target.title,
+          note: target.note ? `${target.note} (만장일치 승격 🎉)` : '4인 만장일치 합주곡 🎉',
+          link: target.link || ''
+        });
+        alert(`🎉 [${target.artist} - ${target.title}] 곡이 4명 전원 동의(4/4)를 얻어 확정 합주곡으로 올라갔습니다!`);
+      }
+
+      saveState();
+    };
+
+    window.promoteToSetlist = (songId) => {
+      const candList = state.bandSongs?.candidates || [];
+      const target = candList.find(c => c.id === songId);
+      if (!target) return;
+      if (!confirm(`[${target.artist} - ${target.title}] 곡을 즉시 확정 합주곡으로 올릴까요?`)) return;
+
+      state.bandSongs.candidates = candList.filter(c => c.id !== songId);
+      state.bandSongs.setlist.push({
+        id: 'set-' + Date.now(),
+        artist: target.artist,
+        title: target.title,
+        note: target.note || '합주곡',
+        link: target.link || ''
+      });
+      saveState();
+    };
+
+    window.demoteToCandidate = (songId) => {
+      const setlist = state.bandSongs?.setlist || [];
+      const target = setlist.find(s => s.id === songId);
+      if (!target) return;
+      if (!confirm(`[${target.artist} - ${target.title}] 곡을 추천 투표 대기열로 내려보낼까요?`)) return;
+
+      state.bandSongs.setlist = setlist.filter(s => s.id !== songId);
+      state.bandSongs.candidates.unshift({
+        id: 'cand-' + Date.now(),
+        artist: target.artist,
+        title: target.title,
+        note: target.note || '',
+        link: target.link || '',
+        proposer: 'drum',
+        votes: { drum: true, bass: true, guitar: true, vocal: false },
+        createdAt: Date.now()
+      });
+      saveState();
+    };
+
+    window.updateSetlistNote = (songId, newNote) => {
+      const target = (state.bandSongs?.setlist || []).find(s => s.id === songId);
+      if (!target) return;
+      target.note = newNote.trim();
+      saveState();
+    };
+
+    window.deleteSong = (listType, songId) => {
+      if (!confirm('이 곡을 목록에서 삭제할까요?')) return;
+      if (listType === 'setlist') {
+        state.bandSongs.setlist = (state.bandSongs.setlist || []).filter(s => s.id !== songId);
+      } else {
+        state.bandSongs.candidates = (state.bandSongs.candidates || []).filter(s => s.id !== songId);
+      }
+      saveState();
+    };
+
+    // --- 파트 및 개인 루틴 핸들러 ---
     window.selectPart = (partKey) => {
-      if (!PART_META[partKey]) return;
+      if (partKey !== 'lounge' && !PART_META[partKey]) return;
       currentPart = partKey;
       localStorage.setItem(SELECTED_PART_KEY, partKey);
       renderAll();
@@ -908,6 +1469,7 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
 
     window.resetDefaultRoutines = () => {
       const meta = PART_META[currentPart];
+      if (!meta) return;
       if (!confirm(`[${meta.name}] 파트의 개인 데일리 루틴을 기본 4가지로 초기화할까요?`)) return;
       const pData = getActivePartData();
       pData.routines = JSON.parse(JSON.stringify(meta.defaultRoutines));
@@ -916,7 +1478,7 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
 
     window.openAddModal = (type) => {
       currentAddType = type;
-      const meta = PART_META[currentPart];
+      const meta = PART_META[currentPart] || PART_META.drum;
       document.getElementById('addModalTitle').textContent =
         type === 'homework' ? `[${meta.name}] 새 레슨 숙제 / 주간 목표 추가` : `[${meta.name}] 새 개인 루틴 추가`;
       document.getElementById('newItemTitle').value = '';
@@ -959,7 +1521,7 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
 
     window.toggleRawNoteModal = () => {
       const modal = document.getElementById('rawNoteModal');
-      const meta = PART_META[currentPart];
+      const meta = PART_META[currentPart] || PART_META.drum;
       const pData = getActivePartData();
       if (modal.classList.contains('hidden')) {
         document.getElementById('rawModalTitle').textContent = `[${meta.name}] 레슨 노트 / 주간 목표 원문 관리`;
@@ -1002,6 +1564,7 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
 
     window.resetToDefaultHomework = () => {
       const meta = PART_META[currentPart];
+      if (!meta) return;
       if (!confirm(`[${meta.name}] 파트의 기본 숙제 세팅으로 복구할까요?`)) return;
       const pData = getActivePartData();
       pData.rawLessonNote = meta.rawNote;
@@ -1066,7 +1629,7 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
     window.exportDataCode = async () => {
       const dataStr = JSON.stringify(state);
       await navigator.clipboard.writeText(dataStr);
-      alert('모든 파트의 연습 기록이 클립보드에 복사되었습니다!');
+      alert('합주곡 및 모든 파트의 연습 기록이 클립보드에 복사되었습니다!');
     };
 
     window.importDataCode = () => {
@@ -1074,7 +1637,9 @@ Rrrr Llll Rrrr Llll 두마디 기준 연습 130목표(다운 탭 탭 탭)
       if (!input) return;
       try {
         const parsed = JSON.parse(input);
-        state.parts = normalizeDataObject(parsed);
+        const normalized = normalizeDataObject(parsed);
+        state.parts = normalized.parts;
+        state.bandSongs = normalized.bandSongs;
         saveState();
         alert('데이터를 성공적으로 불러왔습니다!');
         window.closeSyncModal();
