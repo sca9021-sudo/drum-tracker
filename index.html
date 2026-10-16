@@ -116,11 +116,18 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/80 pb-3">
           <div>
             <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span><h2 class="text-base font-bold text-white">다음 합주곡 추천 & 투표 대기열</h2></div>
-            <p class="text-xs text-slate-400 mt-0.5">각 파트 버튼(<span class="text-amber-300">🥁드럼</span>·<span class="text-emerald-300">🎸베이스</span>·<span class="text-violet-300">⚡일렉</span>·<span class="text-rose-300">🎤보컬</span>)을 눌러 좋아요를 표시하세요! <strong>4명 모두 동의(4/4)하면 확정 합주곡으로 자동 등록</strong>됩니다.</p>
+            <p class="text-xs text-slate-400 mt-0.5">아래에서 <strong>내 투표 파트를 먼저 선택</strong>한 뒤 본인 파트 버튼만 눌러 투표할 수 있습니다! (1인 1파트 투표 잠금 · <strong>4명 전원 동의(4/4) 시 확정 합주곡 자동 등록</strong>)</p>
           </div>
           <button onclick="window.openSongModal('candidate')" class="text-xs px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold transition shrink-0 self-start sm:self-center">
             <i class="fa-solid fa-music mr-1"></i> 새 추천곡 올리기
           </button>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-indigo-950/30 border border-indigo-500/30 rounded-xl px-3.5 py-2.5">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold"><i class="fa-solid fa-user-lock mr-1"></i>내 투표 파트 (1인 1표 잠금)</span>
+            <span class="text-slate-300 text-[11px]" id="myVoterPartStatusText">본인 파트를 선택하면 해당 파트 투표만 활성화됩니다.</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5" id="myVoterPartSelector"></div>
         </div>
         <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
           <div class="relative flex-1">
@@ -202,6 +209,7 @@
             <button onclick="window.toggleRawNoteModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition"><i class="fa-regular fa-clipboard mr-1"></i>숙제 노트/교체</button>
             <button onclick="window.openAddModal('homework')" class="text-xs px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition"><i class="fa-solid fa-plus mr-1"></i>숙제 추가</button>
             <button onclick="window.openAddModal('routine')" class="text-xs px-2.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold transition"><i class="fa-solid fa-plus mr-1"></i>루틴 추가</button>
+            <button onclick="window.openRoutineArchiveModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 font-semibold transition flex items-center gap-1" title="삭제/보관된 루틴 복원 (과거 기록 보존됨)"><i class="fa-solid fa-clock-rotate-left"></i><span>루틴 복원 (<span id="routineArchiveCountBadge">0</span>)</span></button>
             <button onclick="window.resetDefaultRoutines()" class="text-xs px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="기본 루틴 복구"><i class="fa-solid fa-rotate-left"></i></button>
           </div>
         </div>
@@ -456,6 +464,41 @@
     </div>
   </div>
 
+  <!-- 모달 2-C: 숨김/삭제된 개인 루틴 보관함 & 복원 모달 -->
+  <div id="routineArchiveModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3 shrink-0">
+        <div>
+          <div class="flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-sky-400"></i><h4 class="font-bold text-white text-base" id="routineArchiveModalTitle">보관된 개인 루틴 & 기록 복원</h4></div>
+          <p class="text-[11px] text-slate-400 mt-0.5">목록에서 내린 루틴이라도 과거에 체크한 연습 기록과 누적 시간은 영구 보존됩니다. 언제든 다시 활성화할 수 있습니다.</p>
+        </div>
+        <button onclick="window.closeRoutineArchiveModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="routineArchiveListContainer" class="custom-scroll overflow-y-auto space-y-2.5 pr-1 flex-1"></div>
+    </div>
+  </div>
+
+  <!-- 공통 확인 / 입력 모달 (Canvas 샌드박스 호환) -->
+  <div id="appDialogModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-[70] p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-start justify-between gap-2">
+        <h4 class="font-bold text-white text-sm sm:text-base leading-snug" id="appDialogTitle">알림</h4>
+        <button onclick="window.resolveAppDialog(false)" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-line" id="appDialogMessage"></p>
+      <div id="appDialogInputWrap" class="hidden">
+        <input type="text" id="appDialogInput" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-400">
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button id="appDialogCancelBtn" onclick="window.resolveAppDialog(false)" class="px-3.5 py-1.5 rounded-lg text-xs bg-slate-700 hover:bg-slate-600 text-slate-200">취소</button>
+        <button id="appDialogConfirmBtn" onclick="window.resolveAppDialog(true)" class="px-4 py-1.5 rounded-lg text-xs bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 컨테이너 -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-[80] flex flex-col gap-2 max-w-xs sm:max-w-sm pointer-events-none"></div>
+
   <script type="module">
     import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -463,6 +506,75 @@
     const STORAGE_KEY = 'drum_habit_dashboard_v2';
     const FB_CONFIG_KEY = 'drum_habit_fb_config_v2';
     const SELECTED_PART_KEY = 'band_selected_tab_v2';
+    const MY_VOTER_PART_KEY = 'band_my_voter_part_v2';
+
+    function safeGetStorage(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function safeSetStorage(key, val) {
+      try { localStorage.setItem(key, val); } catch (e) {}
+    }
+    function safeRemoveStorage(key) {
+      try { localStorage.removeItem(key); } catch (e) {}
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const el = document.createElement('div');
+      const colorCls = type === 'error'
+        ? 'bg-rose-950/95 border-rose-500/50 text-rose-200'
+        : (type === 'success' ? 'bg-emerald-950/95 border-emerald-500/50 text-emerald-200' : 'bg-slate-900/95 border-sky-500/40 text-slate-100');
+      el.className = `pointer-events-auto px-3.5 py-2.5 rounded-xl border shadow-xl text-xs font-medium flex items-center gap-2 transition-all duration-300 ${colorCls}`;
+      el.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation text-rose-400' : (type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-info text-sky-400')}"></i><span>${message}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(6px)';
+        setTimeout(() => el.remove(), 250);
+      }, 3200);
+    }
+
+    let dialogResolver = null;
+    let dialogMode = 'confirm';
+
+    function openCustomDialog({ title = '확인', message = '', mode = 'confirm', defaultValue = '' }) {
+      return new Promise(resolve => {
+        dialogResolver = resolve;
+        dialogMode = mode;
+        document.getElementById('appDialogTitle').textContent = title;
+        document.getElementById('appDialogMessage').textContent = message;
+        const inputWrap = document.getElementById('appDialogInputWrap');
+        const inputEl = document.getElementById('appDialogInput');
+        const cancelBtn = document.getElementById('appDialogCancelBtn');
+        if (mode === 'prompt') {
+          inputWrap.classList.remove('hidden');
+          inputEl.value = defaultValue;
+        } else {
+          inputWrap.classList.add('hidden');
+        }
+        if (mode === 'alert') cancelBtn.classList.add('hidden');
+        else cancelBtn.classList.remove('hidden');
+        const modal = document.getElementById('appDialogModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (mode === 'prompt') setTimeout(() => inputEl.focus(), 50);
+      });
+    }
+
+    window.resolveAppDialog = (confirmed) => {
+      const modal = document.getElementById('appDialogModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      if (!dialogResolver) return;
+      const resolve = dialogResolver;
+      dialogResolver = null;
+      if (dialogMode === 'prompt') {
+        resolve(confirmed ? document.getElementById('appDialogInput').value : null);
+      } else {
+        resolve(!!confirmed);
+      }
+    };
 
     const DEFAULT_SETLIST = [
       { id: 'set-1', artist: '히게단 (Official髭男dism)', title: 'Pretender (프리텐더)', note: '현재 합주곡 · 인트로 아르페지오 및 리듬 싱크 맞출 것', link: '' },
@@ -536,8 +648,10 @@
       }
     };
 
-    let currentPart = localStorage.getItem(SELECTED_PART_KEY) || 'lounge';
+    let currentPart = safeGetStorage(SELECTED_PART_KEY) || 'lounge';
     if (currentPart !== 'lounge' && !PART_META[currentPart]) currentPart = 'lounge';
+    let myVoterPart = safeGetStorage(MY_VOTER_PART_KEY) || (PART_META[currentPart] ? currentPart : '');
+    if (myVoterPart && !PART_META[myVoterPart]) myVoterPart = '';
 
     let candidateSortBy = 'votes';
     let currentSongModalMode = 'candidate';
@@ -557,13 +671,57 @@
       return `${y}-${m}-${d}`;
     }
 
+    function buildInitialItemRegistry(partKey, homeworks = [], routines = [], archivedRoutines = []) {
+      const reg = {};
+      const meta = PART_META[partKey];
+      if (meta) {
+        (meta.defaultHomeworks || []).forEach(h => { reg[h.id] = { ...h, itemType: 'homework' }; });
+        (meta.defaultRoutines || []).forEach(r => { reg[r.id] = { ...r, itemType: 'routine' }; });
+      }
+      (archivedRoutines || []).forEach(r => { if (r?.id) reg[r.id] = { ...r, itemType: 'routine' }; });
+      (homeworks || []).forEach(h => { if (h?.id) reg[h.id] = { ...h, itemType: 'homework' }; });
+      (routines || []).forEach(r => { if (r?.id) reg[r.id] = { ...r, itemType: 'routine' }; });
+      return reg;
+    }
+
+    function ensurePartRegistrySynced(partKey, pData) {
+      if (!pData) return;
+      if (!Array.isArray(pData.archivedRoutines)) pData.archivedRoutines = [];
+      if (!pData.itemRegistry || typeof pData.itemRegistry !== 'object') {
+        pData.itemRegistry = buildInitialItemRegistry(partKey, pData.homeworks, pData.routines, pData.archivedRoutines);
+      }
+      (pData.archivedRoutines || []).forEach(r => {
+        if (r?.id) pData.itemRegistry[r.id] = { ...r, itemType: 'routine' };
+      });
+      Object.values(pData.weeklySnapshots || {}).forEach(snap => {
+        (snap?.homeworks || []).forEach(h => {
+          if (h?.id && !pData.itemRegistry[h.id]) pData.itemRegistry[h.id] = { ...h, itemType: 'homework' };
+        });
+      });
+      (pData.homeworkHistory || []).forEach(arch => {
+        (arch?.homeworks || []).forEach(h => {
+          if (h?.id && !pData.itemRegistry[h.id]) pData.itemRegistry[h.id] = { ...h, itemType: 'homework' };
+        });
+      });
+      (pData.homeworks || []).forEach(h => {
+        if (h?.id) pData.itemRegistry[h.id] = { ...h, itemType: 'homework' };
+      });
+      (pData.routines || []).forEach(r => {
+        if (r?.id) pData.itemRegistry[r.id] = { ...r, itemType: 'routine' };
+      });
+    }
+
     function createInitialPartsData() {
       const parts = {};
       Object.keys(PART_META).forEach(key => {
+        const defaultHws = JSON.parse(JSON.stringify(PART_META[key].defaultHomeworks));
+        const defaultRts = JSON.parse(JSON.stringify(PART_META[key].defaultRoutines));
         parts[key] = {
           rawLessonNote: PART_META[key].rawNote,
-          homeworks: JSON.parse(JSON.stringify(PART_META[key].defaultHomeworks)),
-          routines: JSON.parse(JSON.stringify(PART_META[key].defaultRoutines)),
+          homeworks: defaultHws,
+          routines: defaultRts,
+          archivedRoutines: [],
+          itemRegistry: buildInitialItemRegistry(key, defaultHws, defaultRts, []),
           taskOrder: [],
           goalConfig: { ...PART_META[key].defaultGoalConfig },
           logs: {},
@@ -634,6 +792,8 @@
               rawLessonNote: rawObj.parts[k].rawLessonNote ?? baseParts[k].rawLessonNote,
               homeworks: rawObj.parts[k].homeworks ?? baseParts[k].homeworks,
               routines: rawObj.parts[k].routines ?? baseParts[k].routines,
+              archivedRoutines: Array.isArray(rawObj.parts[k].archivedRoutines) ? rawObj.parts[k].archivedRoutines : [],
+              itemRegistry: (rawObj.parts[k].itemRegistry && typeof rawObj.parts[k].itemRegistry === 'object') ? rawObj.parts[k].itemRegistry : {},
               taskOrder: Array.isArray(rawObj.parts[k].taskOrder) ? rawObj.parts[k].taskOrder : [],
               goalConfig: {
                 targetDaysPerWeek: Number(rawObj.parts[k].goalConfig?.targetDaysPerWeek) || PART_META[k].defaultGoalConfig.targetDaysPerWeek,
@@ -644,6 +804,7 @@
               weeklySnapshots: rawObj.parts[k].weeklySnapshots ?? {},
               homeworkHistory: Array.isArray(rawObj.parts[k].homeworkHistory) ? rawObj.parts[k].homeworkHistory : []
             };
+            ensurePartRegistrySynced(k, baseParts[k]);
           }
         });
       }
@@ -653,12 +814,15 @@
             rawLessonNote: rawObj.rawLessonNote ?? baseParts.drum.rawLessonNote,
             homeworks: rawObj.homeworks ?? baseParts.drum.homeworks,
             routines: rawObj.routines ?? baseParts.drum.routines,
+            archivedRoutines: [],
+            itemRegistry: {},
             taskOrder: [],
             goalConfig: { ...PART_META.drum.defaultGoalConfig },
             logs: rawObj.logs ?? {},
             weeklySnapshots: {},
             homeworkHistory: []
           };
+          ensurePartRegistrySynced('drum', baseParts.drum);
         }
       }
       const bandSongs = {
@@ -674,9 +838,24 @@
       const pData = state.parts[targetPart];
       if (!pData.weeklySnapshots) pData.weeklySnapshots = {};
       if (!Array.isArray(pData.homeworkHistory)) pData.homeworkHistory = [];
+      if (!Array.isArray(pData.archivedRoutines)) pData.archivedRoutines = [];
       if (!Array.isArray(pData.taskOrder)) pData.taskOrder = [];
       if (!pData.goalConfig) pData.goalConfig = { ...PART_META[targetPart].defaultGoalConfig };
+      ensurePartRegistrySynced(targetPart, pData);
       return pData;
+    }
+
+    function resolveItemMeta(partKey, itemId) {
+      const pData = state.parts[partKey];
+      if (!pData) return { id: itemId, title: `기록된 연습 (${itemId})`, sub: '삭제된 항목 (기록 보존됨)', target: '', itemType: 'routine', isDeleted: true };
+      ensurePartRegistrySynced(partKey, pData);
+      const activeHw = (pData.homeworks || []).find(h => h.id === itemId);
+      if (activeHw) return { ...activeHw, itemType: 'homework', isDeleted: false };
+      const activeRt = (pData.routines || []).find(r => r.id === itemId);
+      if (activeRt) return { ...activeRt, itemType: 'routine', isDeleted: false };
+      const regItem = pData.itemRegistry?.[itemId];
+      if (regItem) return { ...regItem, isDeleted: true };
+      return { id: itemId, title: '과거 연습 항목 (보존된 기록)', sub: '현재 루틴 목록에서 제외된 항목이지만 기록이 유지됩니다.', target: '', itemType: 'routine', isDeleted: true };
     }
 
     function getHomeworksForPartAndDate(partKey, dateStr) {
@@ -701,13 +880,41 @@
       return pData.rawLessonNote || '';
     }
 
+    function getRoutinesForPartAndDate(partKey, dateStr) {
+      const pData = state.parts[partKey];
+      if (!pData) return [];
+      const weekKey = getWeekStartKey(dateStr, partKey);
+      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), partKey);
+      if (weekKey !== currentWeekKey && Array.isArray(pData.weeklySnapshots?.[weekKey]?.routines)) {
+        return pData.weeklySnapshots[weekKey].routines;
+      }
+      return pData.routines || [];
+    }
+
     function getOrderedUnifiedTasks(partKey, dateStr) {
       const pData = state.parts[partKey];
       if (!pData) return [];
-      const activeHws = getHomeworksForPartAndDate(partKey, dateStr).map(h => ({ ...h, itemType: 'homework' }));
-      const routines = (pData.routines || []).map(r => ({ ...r, itemType: 'routine' }));
+      ensurePartRegistrySynced(partKey, pData);
+      const activeHws = getHomeworksForPartAndDate(partKey, dateStr).map(h => ({ ...h, itemType: 'homework', isDeleted: false }));
+      const routines = getRoutinesForPartAndDate(partKey, dateStr).map(r => ({ ...r, itemType: 'routine', isDeleted: false }));
       const allMap = new Map();
       [...activeHws, ...routines].forEach(it => allMap.set(it.id, it));
+
+      // 루틴/숙제가 삭제되었더라도 해당 날짜(dateStr)에 이미 체크/시간/BPM 기록이 있다면 절대 날아가지 않도록 보존하여 표시
+      const dayLog = pData.logs?.[dateStr];
+      if (dayLog) {
+        const loggedIds = new Set([
+          ...Object.keys(dayLog.checks || {}).filter(id => dayLog.checks[id]),
+          ...Object.keys(dayLog.times || {}).filter(id => Number(dayLog.times[id]) > 0),
+          ...Object.keys(dayLog.bpms || {}).filter(id => String(dayLog.bpms[id] || '').trim() !== '')
+        ]);
+        loggedIds.forEach(id => {
+          if (!allMap.has(id)) {
+            const ghostMeta = resolveItemMeta(partKey, id);
+            allMap.set(id, { ...ghostMeta, isDeleted: true });
+          }
+        });
+      }
 
       const order = Array.isArray(pData.taskOrder) ? pData.taskOrder : [];
       const ordered = [];
@@ -718,7 +925,6 @@
         }
       });
       allMap.forEach(it => ordered.push(it));
-      pData.taskOrder = ordered.map(it => it.id);
       return ordered;
     }
 
@@ -736,6 +942,7 @@
     function syncCurrentWeekSnapshot(partKey, dateStr) {
       const pData = state.parts[partKey];
       if (!pData) return;
+      ensurePartRegistrySynced(partKey, pData);
       if (!pData.weeklySnapshots) pData.weeklySnapshots = {};
       const weekKey = getWeekStartKey(dateStr, partKey);
       const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), partKey);
@@ -743,13 +950,14 @@
         pData.weeklySnapshots[weekKey] = {
           rawLessonNote: pData.rawLessonNote || '',
           homeworks: JSON.parse(JSON.stringify(pData.homeworks || [])),
+          routines: JSON.parse(JSON.stringify(pData.routines || [])),
           savedAt: Date.now()
         };
       }
     }
 
     function loadLocalState() {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = safeGetStorage(STORAGE_KEY);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -766,7 +974,7 @@
     async function saveState() {
       if (PART_META[currentPart]) syncCurrentWeekSnapshot(currentPart, state.selectedDate);
       state.updatedAt = Date.now();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      safeSetStorage(STORAGE_KEY, JSON.stringify(state));
       renderAll();
       if (db && !isRemoteUpdating) await pushToCloud();
     }
@@ -799,7 +1007,7 @@
     }
 
     async function initFirebaseFromSaved() {
-      const savedConfigRaw = localStorage.getItem(FB_CONFIG_KEY);
+      const savedConfigRaw = safeGetStorage(FB_CONFIG_KEY);
       if (!savedConfigRaw) { setSyncBadge('local', '로컬 모드 (연동 설정)'); return; }
       try {
         const { config, docId } = JSON.parse(savedConfigRaw);
@@ -837,7 +1045,7 @@
             state.parts = normalized.parts;
             state.bandSongs = normalized.bandSongs;
             state.updatedAt = cloudData.updatedAt ?? Date.now();
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            safeSetStorage(STORAGE_KEY, JSON.stringify(state));
             renderAll();
             isRemoteUpdating = false;
             setSyncBadge('connected', '실시간 동기화 중');
@@ -845,14 +1053,14 @@
         }, () => setSyncBadge('error', '동기화 권한/연결 오류'));
       } catch (err) {
         setSyncBadge('error', '연동 실패 (설정 확인)');
-        alert('Firebase 연결에 실패했습니다.');
+        showToast('Firebase 연결에 실패했습니다.', 'error');
       }
     }
 
     async function pushToCloud() {
       if (!db) return;
       try {
-        const savedConfigRaw = localStorage.getItem(FB_CONFIG_KEY);
+        const savedConfigRaw = safeGetStorage(FB_CONFIG_KEY);
         if (!savedConfigRaw) return;
         const { docId } = JSON.parse(savedConfigRaw);
         const docRef = doc(db, 'drum_dashboard', docId || 'my_drum_tracker');
@@ -900,14 +1108,20 @@
       const pData = state.parts[partKey];
       if (!pData) return { done: 0, total: 0, targetDaily: 1, rate: 0, isGoalMet: false };
       const activeHomeworks = getHomeworksForPartAndDate(partKey, dateStr);
-      const routines = pData.routines || [];
-      const totalItems = activeHomeworks.length + routines.length;
+      const routines = getRoutinesForPartAndDate(partKey, dateStr);
+      const dayLog = pData.logs?.[dateStr]?.checks || {};
+      // 루틴이 삭제되었더라도 해당 날짜에 체크된 기록이 있으면 모두 카운트에 포함하여 기록 유실 방지
+      const checkedIds = Object.keys(dayLog).filter(id => !!dayLog[id]);
+      const activeIds = new Set([...activeHomeworks, ...routines].map(it => it.id));
+      let preservedDeletedDone = 0;
+      checkedIds.forEach(id => {
+        if (!activeIds.has(id)) preservedDeletedDone++;
+      });
+      const totalItems = activeHomeworks.length + routines.length + preservedDeletedDone;
       const goalCfg = getPartGoalConfig(partKey);
       const targetDaily = Math.min(goalCfg.targetChecksPerDay, Math.max(1, totalItems));
-      if (totalItems === 0) return { done: 0, total: 0, targetDaily: 1, rate: 0, isGoalMet: false };
-      const dayLog = pData.logs?.[dateStr]?.checks || {};
-      let done = 0;
-      [...activeHomeworks, ...routines].forEach(item => { if (dayLog[item.id]) done++; });
+      if (totalItems === 0 && checkedIds.length === 0) return { done: 0, total: 0, targetDaily: 1, rate: 0, isGoalMet: false };
+      const done = checkedIds.length;
       const rate = Math.min(100, Math.round((done / targetDaily) * 100));
       return { done, total: totalItems, targetDaily, rate, isGoalMet: done >= targetDaily };
     }
@@ -952,6 +1166,8 @@
         document.getElementById('calendarPartLabel').textContent = meta.name;
         document.getElementById('memoPartLabel').textContent = meta.name;
         document.getElementById('archiveCountBadge').textContent = (pData.homeworkHistory || []).length;
+        const rtArchBadge = document.getElementById('routineArchiveCountBadge');
+        if (rtArchBadge) rtArchBadge.textContent = (pData.archivedRoutines || []).length;
         loungeStats.classList.add('hidden'); loungeStats.classList.remove('flex');
         partStats.classList.remove('hidden'); partStats.classList.add('flex');
         loungeView.classList.add('hidden'); practiceView.classList.remove('hidden');
@@ -1022,6 +1238,35 @@
         return (b.createdAt || 0) - (a.createdAt || 0);
       });
 
+      const voterSelectorEl = document.getElementById('myVoterPartSelector');
+      const voterStatusEl = document.getElementById('myVoterPartStatusText');
+      if (voterSelectorEl) {
+        voterSelectorEl.innerHTML = ['drum', 'bass', 'guitar', 'vocal'].map(pKey => {
+          const p = PART_META[pKey];
+          const isMe = myVoterPart === pKey;
+          return `<button onclick="window.setMyVoterPart('${pKey}')" class="px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1 transition ${isMe ? p.voteActiveClass + ' ring-1 ring-white/40 shadow' : 'bg-slate-900/90 border-slate-700 text-slate-400 hover:border-slate-500'}"><span>${p.emoji}</span><span>${p.short}</span>${isMe ? '<i class="fa-solid fa-check text-[10px] ml-0.5"></i>' : ''}</button>`;
+        }).join('');
+      }
+      if (voterStatusEl) {
+        if (myVoterPart && PART_META[myVoterPart]) {
+          const mp = PART_META[myVoterPart];
+          voterStatusEl.innerHTML = `현재 <strong class="${mp.accentText}">${mp.emoji} ${mp.name}</strong> 파트로 로그인됨 · 내 파트 버튼만 투표/취소할 수 있습니다.`;
+        } else {
+          voterStatusEl.innerHTML = `<span class="text-amber-300 font-semibold">우측에서 본인 파트를 먼저 선택해주세요!</span> (한 사람이 4개 파트를 다 누르는 것을 방지합니다)`;
+        }
+      }
+
+      const sortVotesBtn = document.getElementById('sortVotesBtn');
+      const sortNewestBtn = document.getElementById('sortNewestBtn');
+      if (sortVotesBtn && sortNewestBtn) {
+        sortVotesBtn.className = candidateSortBy === 'votes'
+          ? 'text-xs px-2.5 py-1 rounded-lg font-medium transition bg-sky-500/20 text-sky-300 border border-sky-500/30'
+          : 'text-xs px-2.5 py-1 rounded-lg font-medium transition bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200';
+        sortNewestBtn.className = candidateSortBy === 'newest'
+          ? 'text-xs px-2.5 py-1 rounded-lg font-medium transition bg-sky-500/20 text-sky-300 border border-sky-500/30'
+          : 'text-xs px-2.5 py-1 rounded-lg font-medium transition bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200';
+      }
+
       const candEl = document.getElementById('candidatesContainer');
       if (filtered.length === 0) {
         candEl.innerHTML = `<div class="col-span-full py-10 text-center text-xs text-slate-400 bg-slate-900/40 rounded-xl border border-dashed border-slate-700">우측 상단 <strong>[+ 새 추천곡 올리기]</strong> 버튼으로 하고 싶은 곡을 제안해 보세요!</div>`;
@@ -1033,7 +1278,9 @@
           const partVoteButtons = ['drum', 'bass', 'guitar', 'vocal'].map(pKey => {
             const p = PART_META[pKey];
             const liked = !!votes[pKey];
-            return `<button onclick="window.toggleCandidateVote('${song.id}', '${pKey}')" class="flex-1 py-1.5 px-2 rounded-lg border text-[11px] flex items-center justify-center gap-1 transition ${liked ? p.voteActiveClass : 'bg-slate-800/70 border-slate-700 text-slate-400 hover:border-slate-500'}"><span>${p.emoji}</span><span>${p.short}</span>${liked ? '<i class="fa-solid fa-heart text-[10px] ml-0.5"></i>' : ''}</button>`;
+            const isMyPart = myVoterPart === pKey;
+            const lockedOtherPart = !isMyPart;
+            return `<button onclick="window.toggleCandidateVote('${song.id}', '${pKey}')" title="${isMyPart ? `${p.name} 투표 토글` : `본인 파트(${myVoterPart ? PART_META[myVoterPart].name : '미선택'})만 투표 가능`}" class="flex-1 py-1.5 px-2 rounded-lg border text-[11px] flex items-center justify-center gap-1 transition ${liked ? p.voteActiveClass : 'bg-slate-800/70 border-slate-700 text-slate-400'} ${isMyPart ? 'hover:brightness-110 ring-1 ring-sky-400/40 cursor-pointer' : 'opacity-60 cursor-not-allowed'}"><span>${p.emoji}</span><span>${p.short}</span>${liked ? '<i class="fa-solid fa-heart text-[10px] ml-0.5"></i>' : (lockedOtherPart ? '<i class="fa-solid fa-lock text-[9px] text-slate-500 ml-0.5"></i>' : '')}</button>`;
           }).join('');
           return `
             <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-700/80 flex flex-col justify-between gap-3">
@@ -1165,12 +1412,21 @@
       const bpmVal = dayLog.bpms?.[item.id] || '';
       const timeVal = dayLog.times?.[item.id] ?? '';
       const isHw = type === 'homework';
+      const isDeleted = !!item.isDeleted;
 
       const typePill = isHw
         ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-extrabold shrink-0">📌 레슨숙제</span>`
         : `<span class="text-[10px] px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40 font-extrabold shrink-0">🔄 개인루틴</span>`;
+      const deletedPill = isDeleted
+        ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold shrink-0"><i class="fa-solid fa-shield-heart mr-1"></i>보존된 기록 (목록 제외됨)</span>`
+        : '';
       const leftAccent = isHw ? 'border-l-4 border-l-amber-400' : 'border-l-4 border-l-sky-400';
       const badgeColor = isHw ? 'bg-amber-500/10 text-amber-200 border-amber-500/30' : 'bg-sky-500/10 text-sky-200 border-sky-500/30';
+
+      const actionButtonsHTML = isDeleted
+        ? `<button onclick="window.restoreArchivedRoutine('${item.id}')" title="현재 루틴 목록으로 다시 복원" class="text-[11px] px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-semibold"><i class="fa-solid fa-rotate-left mr-1"></i>루틴 복원</button>`
+        : `<button onclick="window.openEditModal('${type}', '${item.id}')" class="text-slate-400 hover:text-sky-400 p-1.5 text-xs" title="항목 수정"><i class="fa-solid fa-pen"></i></button>
+           <button onclick="window.deleteItem('${type}', '${item.id}')" class="text-slate-500 hover:text-rose-400 p-1.5 text-xs" title="목록에서 내리기 (과거 기록은 보존됨)"><i class="fa-regular fa-trash-can"></i></button>`;
 
       return `
         <div class="p-3.5 rounded-xl bg-slate-900/85 border ${checked ? 'border-emerald-500/50 bg-emerald-950/10' : 'border-slate-700/70'} ${leftAccent} flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition">
@@ -1182,6 +1438,7 @@
             <div class="space-y-1 flex-1">
               <div class="flex flex-wrap items-center gap-1.5">
                 ${typePill}
+                ${deletedPill}
                 <span class="text-sm font-bold ${checked ? 'line-through text-slate-400' : 'text-white'}">${item.title}</span>
                 ${item.target ? `<span class="text-[11px] px-2 py-0.5 rounded-md border ${badgeColor} font-medium">${item.target}</span>` : ''}
               </div>
@@ -1202,8 +1459,7 @@
               <i class="fa-solid fa-gauge-high text-slate-400 text-xs mr-1.5"></i>
               <input type="text" placeholder="BPM / 상태" value="${bpmVal}" onchange="window.saveBpm('${item.id}', this.value)" class="bg-transparent text-xs text-white w-20 sm:w-24 focus:outline-none">
             </div>
-            <button onclick="window.openEditModal('${type}', '${item.id}')" class="text-slate-400 hover:text-sky-400 p-1.5 text-xs"><i class="fa-solid fa-pen"></i></button>
-            <button onclick="window.deleteItem('${type}', '${item.id}')" class="text-slate-500 hover:text-rose-400 p-1.5 text-xs"><i class="fa-regular fa-trash-can"></i></button>
+            ${actionButtonsHTML}
           </div>
         </div>`;
     }
@@ -1314,11 +1570,6 @@
       document.getElementById('chartBreakdownWeekLabel').textContent = `${focusDays[0].dateStr} ~ ${focusDays[6].dateStr}`;
 
       const itemMinutesMap = {};
-      const activeHws = getHomeworksForPartAndDate(partKey, focusWeek.weekKey);
-      const allItems = [...activeHws, ...(pData.routines || [])];
-      const titleMap = {};
-      allItems.forEach(it => { titleMap[it.id] = it.title; });
-
       focusDays.forEach(d => {
         const tObj = pData.logs?.[d.dateStr]?.times || {};
         Object.entries(tObj).forEach(([itemId, min]) => {
@@ -1334,7 +1585,8 @@
       } else {
         breakdownEl.innerHTML = sortedBreakdown.map(([itemId, min]) => {
           const pct = Math.round((min / Math.max(1, focusWeek.totalMin)) * 100);
-          const itemTitle = titleMap[itemId] || '이전 연습 항목';
+          const resolved = resolveItemMeta(partKey, itemId);
+          const itemTitle = resolved.isDeleted ? `${resolved.title} (보관됨)` : resolved.title;
           return `
             <div class="space-y-1">
               <div class="flex justify-between text-[11px]">
@@ -1435,12 +1687,18 @@
       const modal = document.getElementById('historyModal');
       modal.classList.add('hidden'); modal.classList.remove('flex');
     };
-    window.manualArchiveCurrentHomework = () => {
-      const label = prompt('보관함 이름을 입력해주세요:', `${getFormatDate(new Date())} 레슨 숙제 백업`);
+    window.manualArchiveCurrentHomework = async () => {
+      const label = await openCustomDialog({
+        title: '현재 숙제 스냅샷 저장',
+        message: '보관함 이름을 입력해주세요:',
+        mode: 'prompt',
+        defaultValue: `${getFormatDate(new Date())} 레슨 숙제 백업`
+      });
       if (label === null) return;
       archiveCurrentHomeworkSet(label);
       saveState();
       renderHistoryModalList();
+      showToast('현재 숙제 세트가 보관함에 저장되었습니다.', 'success');
     };
 
     function renderHistoryModalList() {
@@ -1478,17 +1736,30 @@
       }).join('');
     }
 
-    window.restoreHistoryEntry = (archId) => {
+    window.restoreHistoryEntry = async (archId) => {
       const pData = getActivePartData();
       const target = (pData.homeworkHistory || []).find(h => h.id === archId);
-      if (!target || !confirm(`[${target.label}] 숙제를 현재 목록으로 불러올까요?`)) return;
+      if (!target) return;
+      const ok = await openCustomDialog({
+        title: '숙제 세트 복원',
+        message: `[${target.label}] 숙제를 현재 목록으로 불러올까요?`,
+        mode: 'confirm'
+      });
+      if (!ok) return;
       pData.rawLessonNote = target.rawLessonNote || '';
       pData.homeworks = JSON.parse(JSON.stringify(target.homeworks || []));
+      ensurePartRegistrySynced(currentPart, pData);
       saveState();
       window.closeHistoryModal();
+      showToast('선택한 숙제 세트를 불러왔습니다.', 'success');
     };
-    window.deleteHistoryEntry = (archId) => {
-      if (!confirm('이 보관 기록을 삭제할까요?')) return;
+    window.deleteHistoryEntry = async (archId) => {
+      const ok = await openCustomDialog({
+        title: '보관 기록 삭제',
+        message: '이 보관함 스냅샷을 삭제할까요? (일자별 연습 기록은 유지됩니다)',
+        mode: 'confirm'
+      });
+      if (!ok) return;
       const pData = getActivePartData();
       pData.homeworkHistory = (pData.homeworkHistory || []).filter(h => h.id !== archId);
       saveState();
@@ -1530,13 +1801,22 @@
       const modal = document.getElementById('songModal');
       modal.classList.add('hidden'); modal.classList.remove('flex');
     };
+    window.setMyVoterPart = (partKey) => {
+      if (!PART_META[partKey]) return;
+      myVoterPart = partKey;
+      safeSetStorage(MY_VOTER_PART_KEY, partKey);
+      const mp = PART_META[partKey];
+      showToast(`내 투표 파트가 [${mp.emoji} ${mp.name}](으)로 설정되었습니다.`, 'info');
+      window.renderLounge();
+    };
+
     window.confirmAddSong = () => {
       const artist = document.getElementById('songArtistInput').value.trim();
       const title = document.getElementById('songTitleInput').value.trim();
       const note = document.getElementById('songNoteInput').value.trim();
       const link = document.getElementById('songLinkInput').value.trim();
       const proposer = document.getElementById('songProposerSelect').value;
-      if (!artist || !title) { alert('아티스트와 곡 제목을 입력해주세요.'); return; }
+      if (!artist || !title) { showToast('아티스트와 곡 제목을 입력해주세요.', 'error'); return; }
       if (editingSongId) {
         const list = currentSongModalMode === 'setlist' ? state.bandSongs.setlist : state.bandSongs.candidates;
         const target = (list || []).find(s => s.id === editingSongId);
@@ -1545,7 +1825,13 @@
         state.bandSongs.setlist.push({ id: 'set-' + Date.now(), artist, title, note: note || '합주곡', link });
       } else {
         const initialVotes = { drum: false, bass: false, guitar: false, vocal: false };
-        if (proposer && initialVotes.hasOwnProperty(proposer)) initialVotes[proposer] = true;
+        if (proposer && initialVotes.hasOwnProperty(proposer)) {
+          initialVotes[proposer] = true;
+          if (!myVoterPart) {
+            myVoterPart = proposer;
+            safeSetStorage(MY_VOTER_PART_KEY, proposer);
+          }
+        }
         state.bandSongs.candidates.push({ id: 'cand-' + Date.now(), artist, title, note, link, proposer, votes: initialVotes, createdAt: Date.now() });
       }
       window.closeSongModal();
@@ -1553,6 +1839,16 @@
     };
 
     window.toggleCandidateVote = (songId, partKey) => {
+      if (!myVoterPart || !PART_META[myVoterPart]) {
+        showToast('먼저 상단 [내 투표 파트]에서 본인의 파트를 선택해주세요!', 'error');
+        return;
+      }
+      if (partKey !== myVoterPart) {
+        const myMeta = PART_META[myVoterPart];
+        const targetMeta = PART_META[partKey];
+        showToast(`1인 1파트 투표 제한: 현재 [${myMeta.emoji}${myMeta.short}] 파트로 설정되어 있어 [${targetMeta.emoji}${targetMeta.short}] 버튼은 누를 수 없습니다.`, 'error');
+        return;
+      }
       const candList = state.bandSongs?.candidates || [];
       const target = candList.find(c => c.id === songId);
       if (!target) return;
@@ -1562,32 +1858,49 @@
       if (totalVotes === 4) {
         state.bandSongs.candidates = candList.filter(c => c.id !== songId);
         state.bandSongs.setlist.push({ id: 'set-' + Date.now(), artist: target.artist, title: target.title, note: target.note ? `${target.note} (만장일치 승격 🎉)` : '4인 만장일치 합주곡 🎉', link: target.link || '' });
-        alert(`🎉 [${target.artist} - ${target.title}] 곡이 4명 전원 동의(4/4)로 확정 합주곡에 등록되었습니다!`);
+        showToast(`🎉 [${target.artist} - ${target.title}] 곡이 4명 전원 동의(4/4)로 확정 합주곡에 등록되었습니다!`, 'success');
       }
       saveState();
     };
-    window.promoteToSetlist = (songId) => {
+    window.promoteToSetlist = async (songId) => {
       const candList = state.bandSongs?.candidates || [];
       const target = candList.find(c => c.id === songId);
-      if (!target || !confirm(`[${target.artist} - ${target.title}] 곡을 확정 합주곡으로 올릴까요?`)) return;
+      if (!target) return;
+      const ok = await openCustomDialog({
+        title: '확정 합주곡 승격',
+        message: `[${target.artist} - ${target.title}] 곡을 확정 합주곡으로 올릴까요?`,
+        mode: 'confirm'
+      });
+      if (!ok) return;
       state.bandSongs.candidates = candList.filter(c => c.id !== songId);
       state.bandSongs.setlist.push({ id: 'set-' + Date.now(), artist: target.artist, title: target.title, note: target.note || '합주곡', link: target.link || '' });
       saveState();
     };
-    window.demoteToCandidate = (songId) => {
+    window.demoteToCandidate = async (songId) => {
       const setlist = state.bandSongs?.setlist || [];
       const target = setlist.find(s => s.id === songId);
-      if (!target || !confirm(`[${target.artist} - ${target.title}] 곡을 추천 대기열로 내릴까요?`)) return;
+      if (!target) return;
+      const ok = await openCustomDialog({
+        title: '추천 대기열로 이동',
+        message: `[${target.artist} - ${target.title}] 곡을 추천 대기열로 내릴까요?`,
+        mode: 'confirm'
+      });
+      if (!ok) return;
       state.bandSongs.setlist = setlist.filter(s => s.id !== songId);
-      state.bandSongs.candidates.unshift({ id: 'cand-' + Date.now(), artist: target.artist, title: target.title, note: target.note || '', link: target.link || '', proposer: 'drum', votes: { drum: true, bass: true, guitar: true, vocal: false }, createdAt: Date.now() });
+      state.bandSongs.candidates.unshift({ id: 'cand-' + Date.now(), artist: target.artist, title: target.title, note: target.note || '', link: target.link || '', proposer: myVoterPart || 'drum', votes: { drum: true, bass: true, guitar: true, vocal: false }, createdAt: Date.now() });
       saveState();
     };
     window.updateSetlistNote = (songId, newNote) => {
       const target = (state.bandSongs?.setlist || []).find(s => s.id === songId);
       if (target) { target.note = newNote.trim(); saveState(); }
     };
-    window.deleteSong = (listType, songId) => {
-      if (!confirm('이 곡을 삭제할까요?')) return;
+    window.deleteSong = async (listType, songId) => {
+      const ok = await openCustomDialog({
+        title: '곡 삭제',
+        message: '이 곡을 목록에서 삭제할까요?',
+        mode: 'confirm'
+      });
+      if (!ok) return;
       if (listType === 'setlist') state.bandSongs.setlist = (state.bandSongs.setlist || []).filter(s => s.id !== songId);
       else state.bandSongs.candidates = (state.bandSongs.candidates || []).filter(s => s.id !== songId);
       saveState();
@@ -1596,7 +1909,11 @@
     window.selectPart = (partKey) => {
       if (partKey !== 'lounge' && !PART_META[partKey]) return;
       currentPart = partKey;
-      localStorage.setItem(SELECTED_PART_KEY, partKey);
+      safeSetStorage(SELECTED_PART_KEY, partKey);
+      if (PART_META[partKey]) {
+        myVoterPart = partKey;
+        safeSetStorage(MY_VOTER_PART_KEY, partKey);
+      }
       renderAll();
     };
 
@@ -1651,28 +1968,148 @@
     };
     window.goToToday = () => { state.selectedDate = getFormatDate(new Date()); renderAll(); };
 
-    window.deleteItem = (type, id) => {
-      if (!confirm('이 연습 항목을 삭제할까요?')) return;
+    window.deleteItem = async (type, id) => {
       const pData = getActivePartData();
+      ensurePartRegistrySynced(currentPart, pData);
+      const isRoutine = type === 'routine';
+      const ok = await openCustomDialog({
+        title: isRoutine ? '개인 루틴 목록에서 내리기' : '레슨 숙제 항목 삭제',
+        message: isRoutine
+          ? '이 루틴을 현재 목록에서 내릴까요?\n(과거에 체크한 연습 기록·시간·BPM은 삭제되지 않고 영구 보존되며, 상단 [루틴 복원]에서 언제든 다시 꺼낼 수 있습니다.)'
+          : '이 숙제 항목을 현재 목록에서 제외할까요?\n(이미 체크된 일자별 연습 기록과 시간은 그대로 보존됩니다.)',
+        mode: 'confirm'
+      });
+      if (!ok) return;
+
       if (type === 'homework') {
         const weekKey = getWeekStartKey(state.selectedDate, currentPart);
         const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), currentPart);
+        const targetHw = getHomeworksForPartAndDate(currentPart, state.selectedDate).find(i => i.id === id);
+        if (targetHw) pData.itemRegistry[targetHw.id] = { ...targetHw, itemType: 'homework' };
         if (weekKey !== currentWeekKey && pData.weeklySnapshots?.[weekKey]) {
           pData.weeklySnapshots[weekKey].homeworks = pData.weeklySnapshots[weekKey].homeworks.filter(i => i.id !== id);
         } else {
           pData.homeworks = pData.homeworks.filter(i => i.id !== id);
         }
       } else {
+        const targetRt = (pData.routines || []).find(i => i.id === id);
+        if (targetRt) {
+          pData.itemRegistry[targetRt.id] = { ...targetRt, itemType: 'routine' };
+          if (!Array.isArray(pData.archivedRoutines)) pData.archivedRoutines = [];
+          if (!pData.archivedRoutines.some(r => r.id === targetRt.id)) {
+            pData.archivedRoutines.unshift({ ...targetRt, archivedAt: getFormatDate(new Date()) });
+          }
+        }
         pData.routines = pData.routines.filter(i => i.id !== id);
       }
-      pData.taskOrder = (pData.taskOrder || []).filter(itemId => itemId !== id);
       saveState();
+      showToast(isRoutine ? '루틴을 보관함으로 이동했습니다. (과거 연습 기록 보존됨)' : '숙제 항목이 목록에서 제외되었습니다. (과거 기록 보존됨)', 'info');
     };
-    window.resetDefaultRoutines = () => {
-      const meta = PART_META[currentPart];
-      if (!meta || !confirm(`[${meta.name}] 기본 루틴 4가지로 초기화할까요?`)) return;
-      getActivePartData().routines = JSON.parse(JSON.stringify(meta.defaultRoutines));
+
+    window.openRoutineArchiveModal = () => {
+      const modal = document.getElementById('routineArchiveModal');
+      const meta = PART_META[currentPart] || PART_META.drum;
+      document.getElementById('routineArchiveModalTitle').textContent = `[${meta.name}] 보관된 개인 루틴 & 기록 복원`;
+      renderRoutineArchiveModalList();
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    };
+    window.closeRoutineArchiveModal = () => {
+      const modal = document.getElementById('routineArchiveModal');
+      modal.classList.add('hidden'); modal.classList.remove('flex');
+    };
+
+    function renderRoutineArchiveModalList() {
+      const pData = getActivePartData();
+      ensurePartRegistrySynced(currentPart, pData);
+      const activeIds = new Set([...(pData.routines || []).map(r => r.id), ...(pData.homeworks || []).map(h => h.id)]);
+      // archivedRoutines 뿐 아니라 itemRegistry에 남아 있는 비활성 루틴도 모두 수집
+      const archivedMap = new Map();
+      (pData.archivedRoutines || []).forEach(r => {
+        if (r?.id && !activeIds.has(r.id)) archivedMap.set(r.id, r);
+      });
+      Object.values(pData.itemRegistry || {}).forEach(it => {
+        if (it?.id && it.itemType === 'routine' && !activeIds.has(it.id) && !archivedMap.has(it.id)) {
+          archivedMap.set(it.id, it);
+        }
+      });
+      const archivedList = Array.from(archivedMap.values());
+      const container = document.getElementById('routineArchiveListContainer');
+      if (archivedList.length === 0) {
+        container.innerHTML = `<div class="py-10 text-center text-xs text-slate-400 bg-slate-900/50 rounded-xl border border-dashed border-slate-700">현재 보관(목록 제외)된 루틴이 없습니다.</div>`;
+        return;
+      }
+      container.innerHTML = archivedList.map(rt => {
+        const stats = getHomeworkStatsFromLogs(pData, rt.id);
+        return `
+          <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">🔄 보관된 루틴</span>
+                <span class="text-xs font-bold text-white">${rt.title}</span>
+                ${rt.target ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">${rt.target}</span>` : ''}
+              </div>
+              ${rt.sub ? `<p class="text-[11px] text-slate-400">${rt.sub}</p>` : ''}
+              <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold">누적 달성 ${stats.checkCount}회</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">누적 시간 ${formatMinutesToKorean(stats.totalMinutes)}</span>
+                ${stats.lastBpm ? `<span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">최근 기록: ${stats.lastBpm}</span>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+              <button onclick="window.restoreArchivedRoutine('${rt.id}')" class="text-xs px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold transition"><i class="fa-solid fa-rotate-left mr-1"></i>목록으로 복원</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    window.restoreArchivedRoutine = (routineId) => {
+      const pData = getActivePartData();
+      ensurePartRegistrySynced(currentPart, pData);
+      const existingActive = (pData.routines || []).some(r => r.id === routineId);
+      if (existingActive) {
+        showToast('이미 활성 루틴 목록에 있는 항목입니다.', 'info');
+        return;
+      }
+      const fromArchive = (pData.archivedRoutines || []).find(r => r.id === routineId);
+      const fromReg = pData.itemRegistry?.[routineId];
+      const restored = fromArchive || fromReg;
+      if (!restored) return;
+      const cleanItem = { id: restored.id, title: restored.title, sub: restored.sub || '', target: restored.target || '' };
+      pData.routines.push(cleanItem);
+      pData.archivedRoutines = (pData.archivedRoutines || []).filter(r => r.id !== routineId);
+      pData.itemRegistry[cleanItem.id] = { ...cleanItem, itemType: 'routine' };
+      if (!pData.taskOrder.includes(cleanItem.id)) pData.taskOrder.push(cleanItem.id);
       saveState();
+      if (!document.getElementById('routineArchiveModal').classList.contains('hidden')) {
+        renderRoutineArchiveModalList();
+      }
+      showToast(`[${cleanItem.title}] 루틴이 이전 기록과 함께 복원되었습니다!`, 'success');
+    };
+
+    window.resetDefaultRoutines = async () => {
+      const meta = PART_META[currentPart];
+      if (!meta) return;
+      const ok = await openCustomDialog({
+        title: '기본 루틴 복구',
+        message: `[${meta.name}] 기본 루틴을 복구할까요? (기존 추가했던 커스텀 루틴과 모든 연습 기록도 삭제되지 않고 보존됩니다.)`,
+        mode: 'confirm'
+      });
+      if (!ok) return;
+      const pData = getActivePartData();
+      ensurePartRegistrySynced(currentPart, pData);
+      const defaultRts = JSON.parse(JSON.stringify(meta.defaultRoutines));
+      const defaultIds = new Set(defaultRts.map(r => r.id));
+      // 기존 커스텀 루틴은 archivedRoutines로 안전하게 보관하여 기록 손실 방지
+      (pData.routines || []).forEach(r => {
+        pData.itemRegistry[r.id] = { ...r, itemType: 'routine' };
+        if (!defaultIds.has(r.id) && !pData.archivedRoutines.some(ar => ar.id === r.id)) {
+          pData.archivedRoutines.unshift({ ...r, archivedAt: getFormatDate(new Date()) });
+        }
+      });
+      pData.routines = defaultRts;
+      pData.archivedRoutines = (pData.archivedRoutines || []).filter(r => !defaultIds.has(r.id));
+      saveState();
+      showToast('기본 루틴이 복구되었습니다.', 'success');
     };
 
     window.openAddModal = (type) => {
@@ -1710,8 +2147,9 @@
       const title = document.getElementById('newItemTitle').value.trim();
       const sub = document.getElementById('newItemSub').value.trim();
       const target = document.getElementById('newItemTarget').value.trim();
-      if (!title) { alert('연습 제목을 입력해주세요.'); return; }
+      if (!title) { showToast('연습 제목을 입력해주세요.', 'error'); return; }
       const pData = getActivePartData();
+      ensurePartRegistrySynced(currentPart, pData);
       const weekKey = getWeekStartKey(state.selectedDate, currentPart);
       const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), currentPart);
       if (editingItemId) {
@@ -1719,19 +2157,34 @@
           ? ((weekKey !== currentWeekKey && pData.weeklySnapshots?.[weekKey]?.homeworks) ? pData.weeklySnapshots[weekKey].homeworks : (pData.homeworks || []))
           : (pData.routines || []);
         const targetObj = list.find(i => i.id === editingItemId);
-        if (targetObj) { targetObj.title = title; targetObj.sub = sub; targetObj.target = target; }
+        if (targetObj) {
+          targetObj.title = title; targetObj.sub = sub; targetObj.target = target;
+          pData.itemRegistry[targetObj.id] = { ...targetObj, itemType: currentAddType };
+        }
         window.closeAddModal(); saveState(); return;
       }
-      const newItem = { id: `${currentPart}-item-` + Date.now(), title, sub, target };
+      // 이전에 삭제/보관했던 동일 제목의 루틴을 다시 추가하는 경우, 기존 ID를 재사용하여 과거 연습 기록과 자동 연결!
+      let reusedId = null;
+      if (currentAddType === 'routine') {
+        const normTitle = title.toLowerCase();
+        const matchArchived = (pData.archivedRoutines || []).find(r => (r.title || '').trim().toLowerCase() === normTitle);
+        const matchReg = Object.values(pData.itemRegistry || {}).find(r => r.itemType === 'routine' && (r.title || '').trim().toLowerCase() === normTitle && !(pData.routines || []).some(active => active.id === r.id));
+        if (matchArchived) reusedId = matchArchived.id;
+        else if (matchReg) reusedId = matchReg.id;
+      }
+      const newItem = { id: reusedId || (`${currentPart}-item-` + Date.now()), title, sub, target };
+      pData.itemRegistry[newItem.id] = { ...newItem, itemType: currentAddType };
       if (currentAddType === 'homework') {
         if (weekKey !== currentWeekKey && pData.weeklySnapshots?.[weekKey]) pData.weeklySnapshots[weekKey].homeworks.push(newItem);
         else pData.homeworks.push(newItem);
       } else {
         pData.routines.push(newItem);
+        pData.archivedRoutines = (pData.archivedRoutines || []).filter(r => r.id !== newItem.id);
       }
       if (!Array.isArray(pData.taskOrder)) pData.taskOrder = [];
-      pData.taskOrder.push(newItem.id);
+      if (!pData.taskOrder.includes(newItem.id)) pData.taskOrder.push(newItem.id);
       window.closeAddModal(); saveState();
+      if (reusedId) showToast('이전에 연습했던 동일 루틴 기록과 자동으로 연결되었습니다!', 'success');
     };
 
     window.toggleRawNoteModal = () => {
@@ -1752,25 +2205,40 @@
     };
     window.parseLinesToHomework = (replaceExisting = false) => {
       const text = document.getElementById('rawLessonText').value.trim();
-      if (!text) { alert('숙제 내용을 입력해주세요.'); return; }
+      if (!text) { showToast('숙제 내용을 입력해주세요.', 'error'); return; }
       const pData = getActivePartData();
+      ensurePartRegistrySynced(currentPart, pData);
       const customLabel = document.getElementById('archiveLabelInput')?.value || '';
       if (replaceExisting) { archiveCurrentHomeworkSet(customLabel); pData.homeworks = []; }
       pData.rawLessonNote = text;
       text.split('\n').map(l => l.trim()).filter(Boolean).forEach((line, idx) => {
-        pData.homeworks.push({ id: `${currentPart}-hw-` + Date.now() + '-' + idx, title: line, sub: '', target: '주간 목표' });
+        const hwObj = { id: `${currentPart}-hw-` + Date.now() + '-' + idx, title: line, sub: '', target: '주간 목표' };
+        pData.homeworks.push(hwObj);
+        pData.itemRegistry[hwObj.id] = { ...hwObj, itemType: 'homework' };
       });
       const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), currentPart);
-      pData.weeklySnapshots[currentWeekKey] = { rawLessonNote: pData.rawLessonNote, homeworks: JSON.parse(JSON.stringify(pData.homeworks)), savedAt: Date.now() };
+      pData.weeklySnapshots[currentWeekKey] = {
+        rawLessonNote: pData.rawLessonNote,
+        homeworks: JSON.parse(JSON.stringify(pData.homeworks)),
+        routines: JSON.parse(JSON.stringify(pData.routines || [])),
+        savedAt: Date.now()
+      };
       saveState(); window.toggleRawNoteModal();
     };
-    window.resetToDefaultHomework = () => {
+    window.resetToDefaultHomework = async () => {
       const meta = PART_META[currentPart];
-      if (!meta || !confirm(`현재 숙제를 보관함에 백업하고 [${meta.name}] 기본 숙제로 복구할까요?`)) return;
+      if (!meta) return;
+      const ok = await openCustomDialog({
+        title: '기본 숙제 복구',
+        message: `현재 숙제를 보관함에 백업하고 [${meta.name}] 기본 숙제로 복구할까요?`,
+        mode: 'confirm'
+      });
+      if (!ok) return;
       const pData = getActivePartData();
       archiveCurrentHomeworkSet('기본 세팅 복구 전 백업');
       pData.rawLessonNote = meta.rawNote;
       pData.homeworks = JSON.parse(JSON.stringify(meta.defaultHomeworks));
+      ensurePartRegistrySynced(currentPart, pData);
       saveState(); window.toggleRawNoteModal();
     };
 
@@ -1791,7 +2259,22 @@
       const goalCfg = getPartGoalConfig(partKey);
       const weekDays = getWeekDates(state.selectedDate, partKey);
       const weekRangeStr = `${weekDays[0].dateStr} ~ ${weekDays[6].dateStr}`;
-      const unifiedTasks = getOrderedUnifiedTasks(partKey, state.selectedDate);
+      const baseTasks = getOrderedUnifiedTasks(partKey, state.selectedDate);
+      const taskMap = new Map();
+      baseTasks.forEach(t => taskMap.set(t.id, t));
+      weekDays.forEach(d => {
+        const log = pData.logs?.[d.dateStr];
+        if (!log) return;
+        const ids = new Set([
+          ...Object.keys(log.checks || {}).filter(id => log.checks[id]),
+          ...Object.keys(log.times || {}).filter(id => Number(log.times[id]) > 0),
+          ...Object.keys(log.bpms || {}).filter(id => String(log.bpms[id] || '').trim() !== '')
+        ]);
+        ids.forEach(id => {
+          if (!taskMap.has(id)) taskMap.set(id, resolveItemMeta(partKey, id));
+        });
+      });
+      const unifiedTasks = Array.from(taskMap.values());
 
       let totalWeekMins = 0, totalWeekChecks = 0, practicedDays = 0;
       const dayStats = weekDays.map(d => {
@@ -1953,33 +2436,59 @@
       try {
         const config = parseFirebaseConfigText(rawText);
         if (!config.apiKey || !config.projectId) throw new Error();
-        localStorage.setItem(FB_CONFIG_KEY, JSON.stringify({ config, docId }));
+        safeSetStorage(FB_CONFIG_KEY, JSON.stringify({ config, docId }));
         await connectFirestore(config, docId);
         window.closeSyncModal();
-      } catch (e) { alert('유효한 Firebase Config 형식이 아닙니다.'); }
+      } catch (e) { showToast('유효한 Firebase Config 형식이 아닙니다.', 'error'); }
     };
     window.disconnectFirebase = async () => {
-      if (!confirm('클라우드 연동을 해제할까요?')) return;
+      const ok = await openCustomDialog({
+        title: '클라우드 연동 해제',
+        message: '클라우드 연동을 해제할까요?',
+        mode: 'confirm'
+      });
+      if (!ok) return;
       if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
-      db = null; localStorage.removeItem(FB_CONFIG_KEY);
+      db = null; safeRemoveStorage(FB_CONFIG_KEY);
       setSyncBadge('local', '로컬 모드 (연동 설정)'); window.closeSyncModal();
     };
     window.forcePushToCloud = async () => {
-      if (!confirm('클라우드 데이터를 현재 기기 데이터로 덮어쓸까요?')) return;
-      await pushToCloud(); alert('반영되었습니다.');
+      const ok = await openCustomDialog({
+        title: '클라우드 덮어쓰기',
+        message: '클라우드 데이터를 현재 기기 데이터로 덮어쓸까요?',
+        mode: 'confirm'
+      });
+      if (!ok) return;
+      await pushToCloud(); showToast('클라우드에 반영되었습니다.', 'success');
     };
     window.exportDataCode = async () => {
-      await navigator.clipboard.writeText(JSON.stringify(state));
-      alert('전체 데이터가 클립보드에 복사되었습니다!');
+      const jsonStr = JSON.stringify(state);
+      try {
+        await navigator.clipboard.writeText(jsonStr);
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = jsonStr;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      showToast('전체 데이터가 클립보드에 복사되었습니다!', 'success');
     };
-    window.importDataCode = () => {
-      const input = prompt('백업 데이터 코드를 붙여넣으세요:');
+    window.importDataCode = async () => {
+      const input = await openCustomDialog({
+        title: '데이터 붙여넣기',
+        message: '백업 데이터 JSON 코드를 아래에 붙여넣으세요:',
+        mode: 'prompt',
+        defaultValue: ''
+      });
       if (!input) return;
       try {
         const normalized = normalizeDataObject(JSON.parse(input));
         state.parts = normalized.parts; state.bandSongs = normalized.bandSongs;
         saveState(); window.closeSyncModal();
-      } catch (e) { alert('올바르지 않은 코드입니다.'); }
+        showToast('데이터를 성공적으로 불러왔습니다!', 'success');
+      } catch (e) { showToast('올바르지 않은 데이터 코드입니다.', 'error'); }
     };
     window.downloadHtmlFile = () => {
       const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
