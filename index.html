@@ -133,7 +133,7 @@
               <h2 class="text-base font-bold text-white">다음 합주곡 추천 & 투표 대기열</h2>
             </div>
             <p class="text-xs text-slate-400 mt-0.5">
-              각 파트 버튼(<span class="text-amber-300">🥁드럼</span>·<span class="text-emerald-300">🎸베이스</span>·<span class="text-violet-300">⚡일렉</span>·<span class="text-rose-300">🎤보컬</span>)을 눌러 좋아요를 표시하세요! <strong>4명 모두 동의(4/4)하면 확정 합주곡으로 자동 등록</strong>됩니다.
+              각 파트 버튼을 눌러 좋아요를 표시하세요! <strong>4명 모두 동의(4/4)하면 확정 합주곡으로 자동 등록</strong>됩니다.
             </p>
           </div>
           <button onclick="window.openSongModal('candidate')" class="text-xs px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold transition shrink-0 self-start sm:self-center">
@@ -259,7 +259,7 @@
         <div id="routineList" class="space-y-3"></div>
       </section>
 
-      <!-- 3. 📊 주간 연습시간 트렌드 차트 (최근 7주 비교) -->
+      <!-- 3. 주간 연습시간 트렌드 차트 -->
       <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/80 pb-3">
           <div class="flex items-center gap-2">
@@ -357,36 +357,23 @@
     </div>
   </div>
 
-  <!-- 모달 A, 1, 2, 3 생략 없이 포함 -->
+  <!-- 기타 모달들 -->
   <div id="songModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center">
-        <h4 class="font-bold text-white text-base" id="songModalTitle">새 추천곡 올리기</h4>
+        <h4 class="font-bold text-white text-base" id="songModalTitle">추천곡 추가</h4>
         <button onclick="window.closeSongModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">아티스트 *</label>
-          <input type="text" id="songArtistInput" placeholder="예: 히게단" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400">
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">곡 제목 *</label>
-          <input type="text" id="songTitleInput" placeholder="예: Pretender" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400">
-        </div>
-        <div id="songProposerWrapper">
-          <label class="text-xs text-slate-400 block mb-1">추천 파트</label>
-          <select id="songProposerSelect" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400">
+        <div><label class="text-xs text-slate-400 block mb-1">아티스트 *</label><input type="text" id="songArtistInput" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white"></div>
+        <div><label class="text-xs text-slate-400 block mb-1">곡 제목 *</label><input type="text" id="songTitleInput" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white"></div>
+        <div id="songProposerWrapper"><label class="text-xs text-slate-400 block mb-1">추천 파트</label>
+          <select id="songProposerSelect" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white">
             <option value="drum">🥁 드럼</option><option value="bass">🎸 베이스</option><option value="guitar">⚡ 일렉기타</option><option value="vocal">🎤 보컬</option>
           </select>
         </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">한줄 코멘트</label>
-          <input type="text" id="songNoteInput" placeholder="합주 포인트 입력" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400">
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">유튜브 링크</label>
-          <input type="url" id="songLinkInput" placeholder="https://..." class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-400">
-        </div>
+        <div><label class="text-xs text-slate-400 block mb-1">코멘트</label><input type="text" id="songNoteInput" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white"></div>
+        <div><label class="text-xs text-slate-400 block mb-1">링크</label><input type="url" id="songLinkInput" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white"></div>
       </div>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="window.closeSongModal()" class="px-4 py-2 rounded-lg text-xs bg-slate-700 text-slate-300">취소</button>
@@ -397,28 +384,19 @@
 
   <div id="addModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center">
-        <h4 class="font-bold text-white text-base" id="addModalTitle">연습 항목 추가</h4>
-        <button onclick="window.closeAddModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
+      <div class="flex justify-between items-center"><h4 class="font-bold text-white text-base" id="addModalTitle">항목 추가</h4><button onclick="window.closeAddModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <div class="space-y-3">
         <div><label class="text-xs text-slate-400 block mb-1">제목 *</label><input type="text" id="newItemTitle" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white"></div>
         <div><label class="text-xs text-slate-400 block mb-1">설명</label><input type="text" id="newItemSub" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white"></div>
         <div><label class="text-xs text-slate-400 block mb-1">목표 템포</label><input type="text" id="newItemTarget" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white"></div>
       </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="window.closeAddModal()" class="px-4 py-2 rounded-lg text-xs bg-slate-700 text-slate-300">취소</button>
-        <button onclick="window.confirmAddItem()" id="addModalSubmitBtn" class="px-4 py-2 rounded-lg text-xs bg-emerald-500 text-slate-950 font-bold">추가하기</button>
-      </div>
+      <div class="flex justify-end gap-2 pt-2"><button onclick="window.closeAddModal()" class="px-4 py-2 rounded-lg text-xs bg-slate-700 text-slate-300">취소</button><button onclick="window.confirmAddItem()" id="addModalSubmitBtn" class="px-4 py-2 rounded-lg text-xs bg-emerald-500 text-slate-950 font-bold">추가하기</button></div>
     </div>
   </div>
 
   <div id="rawNoteModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center">
-        <h4 class="font-bold text-white text-base" id="rawModalTitle">레슨 노트 관리</h4>
-        <button onclick="window.toggleRawNoteModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
+      <div class="flex justify-between items-center"><h4 class="font-bold text-white text-base" id="rawModalTitle">레슨 노트 관리</h4><button onclick="window.toggleRawNoteModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <input type="text" id="archiveLabelInput" placeholder="보관함 메모 제목" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-1.5 text-xs text-white">
       <textarea id="rawLessonText" rows="8" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-3 text-xs text-slate-200"></textarea>
       <div class="flex justify-between items-center gap-2">
@@ -433,26 +411,23 @@
 
   <div id="historyModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-2xl max-h-[88vh] flex flex-col">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-3 shrink-0">
-        <h4 class="font-bold text-white text-base" id="historyModalTitle">지난 숙제 보관함</h4>
-        <button onclick="window.closeHistoryModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3 shrink-0"><h4 class="font-bold text-white text-base" id="historyModalTitle">보관함</h4><button onclick="window.closeHistoryModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <div id="historyListContainer" class="custom-scroll overflow-y-auto space-y-3 pr-1 flex-1"></div>
     </div>
   </div>
 
   <div id="syncModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-        <h4 class="font-bold text-white text-base">클라우드 동기화 설정</h4>
-        <button onclick="window.closeSyncModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3"><h4 class="font-bold text-white text-base">클라우드 동기화 설정</h4><button onclick="window.closeSyncModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <div class="space-y-3 text-xs text-slate-300">
-        <input type="text" id="syncDocIdInput" value="my_drum_tracker" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white">
-        <textarea id="firebaseConfigInput" rows="6" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-3 font-mono text-[11px] text-emerald-300"></textarea>
-        <div class="flex justify-between">
+        <div><label class="block text-slate-400 mb-1">문서 ID (방 이름)</label><input type="text" id="syncDocIdInput" value="my_drum_tracker" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white"></div>
+        <div><label class="block text-slate-400 mb-1">Firebase 설정 코드 붙여넣기 (아무 형태나 가능)</label><textarea id="firebaseConfigInput" rows="6" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-3 font-mono text-[11px] text-emerald-300" placeholder="여기에 config 내용을 그냥 붙여넣으세요"></textarea></div>
+        <div class="flex justify-between pt-1">
           <button onclick="window.disconnectFirebase()" class="px-3 py-2 rounded-lg bg-rose-500/10 text-rose-400">연동 해제</button>
-          <button onclick="window.saveFirebaseConfig()" class="px-4 py-2 rounded-lg bg-sky-500 text-slate-950 font-bold">저장 및 연결</button>
+          <div class="flex gap-2">
+            <button onclick="window.forcePushToCloud()" id="forcePushBtn" class="hidden px-3 py-2 rounded-lg bg-slate-700 text-slate-200">기기 데이터로 덮어쓰기</button>
+            <button onclick="window.saveFirebaseConfig()" class="px-4 py-2 rounded-lg bg-sky-500 text-slate-950 font-bold">저장 및 연결</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1251,7 +1226,7 @@
       window.closeHistoryModal();
     };
 
-    // --- 추천곡 / 파트 숙제 핸들러들 ---
+    // --- 추천곡 / 파트 숙제 핸들러 ---
     window.setCandidateSort = (st) => { candidateSortBy = st; window.renderLounge(); };
     window.openSongModal = (mode) => {
       currentSongModalMode = mode; editingSongId = null;
@@ -1407,14 +1382,43 @@
 
     window.openSyncModal = () => { const m = document.getElementById('syncModal'); m.classList.remove('hidden'); m.classList.add('flex'); };
     window.closeSyncModal = () => { const m = document.getElementById('syncModal'); m.classList.add('hidden'); m.classList.remove('flex'); };
+    
+    // 유연하게 파싱하는 설정 저장 함수 (따옴표나 중괄호 에러 원천 차단)
     window.saveFirebaseConfig = async () => {
+      const rawText = document.getElementById('firebaseConfigInput').value.trim();
+      const docId = document.getElementById('syncDocIdInput').value.trim() || 'my_drum_tracker';
       try {
-        const config = parseFirebaseConfigText(document.getElementById('firebaseConfigInput').value);
-        localStorage.setItem(FB_CONFIG_KEY, JSON.stringify({ config, docId: document.getElementById('syncDocIdInput').value.trim() }));
-        await connectFirestore(config, document.getElementById('syncDocIdInput').value.trim());
+        let config = {};
+        if (rawText.startsWith('{')) {
+          try { config = JSON.parse(rawText); } 
+          catch(err) {
+            // 따옴표나 쉼표가 조금 깨져있어도 자동 보정 시도
+            const fixed = rawText.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":').replace(/'/g, '"');
+            config = JSON.parse(fixed);
+          }
+        } else {
+          // 객체 리터럴 형태로 넣었을 때 추출
+          const getVal = (key) => {
+            const match = rawText.match(new RegExp(`${key}\\s*:\\s*["']([^"']+)["']`));
+            return match ? match[1] : '';
+          };
+          config = {
+            apiKey: getVal('apiKey'),
+            authDomain: getVal('authDomain'),
+            projectId: getVal('projectId'),
+            storageBucket: getVal('storageBucket'),
+            messagingSenderId: getVal('messagingSenderId'),
+            appId: getVal('appId')
+          };
+        }
+        if (!config.apiKey || !config.projectId) throw new Error();
+        localStorage.setItem(FB_CONFIG_KEY, JSON.stringify({ config, docId }));
+        await connectFirestore(config, docId);
         window.closeSyncModal();
-      } catch(e) { alert('설정 오류'); }
+        alert('클라우드 연동 성공!');
+      } catch(e) { alert('설정 코드 형식을 다시 확인해주세요.'); }
     };
+
     window.disconnectFirebase = async () => { if(unsubscribeSnapshot) unsubscribeSnapshot(); db=null; localStorage.removeItem(FB_CONFIG_KEY); setSyncBadge('local','로컬 모드'); window.closeSyncModal(); };
     window.forcePushToCloud = async () => { await pushToCloud(); alert('반영되었습니다.'); };
     window.exportDataCode = async () => { await navigator.clipboard.writeText(JSON.stringify(state)); alert('복사되었습니다.'); };
