@@ -21,6 +21,16 @@
     .custom-scroll::-webkit-scrollbar-track { background: #0f172a; border-radius: 8px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
     .custom-scroll::-webkit-scrollbar-thumb:hover { background: #475569; }
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      body { background: #ffffff !important; color: #0f172a !important; padding: 0 !important; }
+      body > *:not(#weeklyReportModal) { display: none !important; }
+      #weeklyReportModal { position: static !important; display: block !important; background: transparent !important; padding: 0 !important; overflow: visible !important; }
+      #weeklyReportModal .no-print { display: none !important; }
+      #weeklyReportModal .report-shell { max-width: 100% !important; max-height: none !important; box-shadow: none !important; border: none !important; background: transparent !important; padding: 0 !important; overflow: visible !important; }
+      .a4-page { width: 100% !important; min-height: 272mm !important; box-sizing: border-box; background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12mm !important; page-break-after: always; break-after: page; margin-bottom: 0 !important; }
+      .a4-page:last-child { page-break-after: auto; break-after: auto; }
+    }
   </style>
 </head>
 <body class="min-h-screen pb-20">
@@ -45,24 +55,24 @@
         </div>
 
         <div id="partStatsBadges" class="hidden flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
-          <button onclick="window.openGoalModal()" title="주간 목표 수치 조정" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-amber-400/60 flex items-center gap-2 transition text-left">
+          <button onclick="window.openGoalModal()" title="주간 목표 및 레슨일 설정" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-amber-400/60 flex items-center gap-2 transition text-left">
             <i class="fa-solid fa-fire text-orange-500 text-base animate-pulse"></i>
             <div>
               <div class="text-[10px] text-slate-400 font-medium">연속 / 주간출석</div>
               <div class="text-xs sm:text-sm font-bold text-white"><span id="streakCount">0</span>일 <span class="text-[11px] text-amber-300 font-normal">(<span id="weeklyDaysDone">0</span>/<span id="weeklyDaysGoal">5</span>일)</span></div>
             </div>
           </button>
-          <button onclick="window.openGoalModal()" title="주간 목표 수치 조정" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-emerald-400/60 flex items-center gap-2 transition text-left">
+          <button onclick="window.openGoalModal()" title="주간 목표 및 레슨일 설정" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-emerald-400/60 flex items-center gap-2 transition text-left">
             <i class="fa-solid fa-bullseye text-emerald-400 text-base"></i>
             <div>
-              <div class="text-[10px] text-slate-400 font-medium flex items-center gap-1"><span>주간 목표 달성률</span><i class="fa-solid fa-sliders text-[9px] text-sky-400"></i></div>
+              <div class="text-[10px] text-slate-400 font-medium flex items-center gap-1"><span>주간 달성률</span><i class="fa-solid fa-sliders text-[9px] text-sky-400"></i></div>
               <div class="text-xs sm:text-sm font-bold text-white"><span id="weeklyRate">0</span>% <span class="text-[10px] text-slate-400 font-normal" id="weeklyCheckCountSub">(0/20)</span></div>
             </div>
           </button>
           <button onclick="window.openTimeChartModal()" title="주간 연습시간 그래프 보기" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-sky-400/60 flex items-center gap-2 transition text-left">
             <i class="fa-solid fa-chart-column text-sky-400 text-base"></i>
             <div>
-              <div class="text-[10px] text-slate-400 font-medium flex items-center gap-1"><span>주간 연습시간</span><span class="text-[9px] px-1 py-0.2 rounded bg-sky-500/20 text-sky-300">통계</span></div>
+              <div class="text-[10px] text-slate-400 font-medium flex items-center gap-1"><span>주간 연습시간</span><span class="text-[9px] px-1 py-0.2 rounded bg-sky-500/20 text-sky-300">그래프</span></div>
               <div class="text-xs sm:text-sm font-bold text-white"><span id="weeklyTotalTimeBadge">0분</span></div>
             </div>
           </button>
@@ -71,17 +81,11 @@
         <div id="loungeStatsBadges" class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
           <div class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2">
             <i class="fa-solid fa-star text-amber-400 text-sm"></i>
-            <div>
-              <div class="text-[10px] text-slate-400 font-medium uppercase">확정 합주곡</div>
-              <div class="text-xs sm:text-sm font-bold text-white"><span id="setlistCountBadge">3</span>곡</div>
-            </div>
+            <div><div class="text-[10px] text-slate-400 font-medium uppercase">확정 합주곡</div><div class="text-xs sm:text-sm font-bold text-white"><span id="setlistCountBadge">3</span>곡</div></div>
           </div>
           <div class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2">
             <i class="fa-solid fa-thumbs-up text-sky-400 text-sm"></i>
-            <div>
-              <div class="text-[10px] text-slate-400 font-medium uppercase">추천 투표중</div>
-              <div class="text-xs sm:text-sm font-bold text-white"><span id="candidateCountBadge">0</span>곡</div>
-            </div>
+            <div><div class="text-[10px] text-slate-400 font-medium uppercase">추천 투표중</div><div class="text-xs sm:text-sm font-bold text-white"><span id="candidateCountBadge">0</span>곡</div></div>
           </div>
         </div>
       </div>
@@ -90,6 +94,7 @@
   </header>
 
   <main class="max-w-4xl mx-auto px-4 mt-5">
+    <!-- 뷰 1: 합주곡 라운지 -->
     <div id="bandLoungeView" class="space-y-6">
       <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 border-t-2 border-t-indigo-500">
         <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/80 pb-3">
@@ -110,10 +115,7 @@
       <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/80 pb-3">
           <div>
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-              <h2 class="text-base font-bold text-white">다음 합주곡 추천 & 투표 대기열</h2>
-            </div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span><h2 class="text-base font-bold text-white">다음 합주곡 추천 & 투표 대기열</h2></div>
             <p class="text-xs text-slate-400 mt-0.5">각 파트 버튼(<span class="text-amber-300">🥁드럼</span>·<span class="text-emerald-300">🎸베이스</span>·<span class="text-violet-300">⚡일렉</span>·<span class="text-rose-300">🎤보컬</span>)을 눌러 좋아요를 표시하세요! <strong>4명 모두 동의(4/4)하면 확정 합주곡으로 자동 등록</strong>됩니다.</p>
           </div>
           <button onclick="window.openSongModal('candidate')" class="text-xs px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold transition shrink-0 self-start sm:self-center">
@@ -135,6 +137,7 @@
       </section>
     </div>
 
+    <!-- 뷰 2: 파트별 연습 대시보드 -->
     <div id="partPracticeView" class="hidden space-y-5">
       <section class="card-bg rounded-2xl p-4 shadow-lg space-y-3">
         <div class="flex flex-wrap justify-between items-center gap-2">
@@ -145,17 +148,18 @@
           </div>
           <div class="flex flex-wrap items-center gap-1.5">
             <span id="pastWeekIndicator" class="hidden text-[11px] px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold"><i class="fa-solid fa-clock-rotate-left mr-1"></i>지난 주간 기록</span>
+            <button onclick="window.openWeeklyReportModal()" class="text-xs px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 font-semibold flex items-center gap-1 transition"><i class="fa-solid fa-file-pdf"></i><span>주간 리포트 & PDF</span></button>
             <button onclick="window.openTimeChartModal()" class="text-xs px-2.5 py-1 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/30 hover:bg-sky-500/25 font-semibold flex items-center gap-1 transition"><i class="fa-solid fa-chart-column"></i><span>주간 시간 그래프</span></button>
-            <button onclick="window.openGoalModal()" class="text-xs px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 font-semibold flex items-center gap-1 transition"><i class="fa-solid fa-sliders"></i><span>목표 설정</span></button>
+            <button onclick="window.openGoalModal()" class="text-xs px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 font-semibold flex items-center gap-1 transition"><i class="fa-solid fa-sliders"></i><span>목표/레슨일 설정</span></button>
             <button onclick="window.goToToday()" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 font-medium">오늘</button>
           </div>
         </div>
         <div class="bg-slate-900/70 border border-slate-800 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div class="flex flex-wrap items-center gap-2 text-slate-300">
-            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-flag-checkered mr-1"></i>이번 주 목표 기준:</span>
-            <span id="goalSummaryText" class="text-slate-200 font-medium">주 5일 출석 · 하루 3개 이상 체크 시 달성</span>
+            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-flag-checkered mr-1"></i>기준:</span>
+            <span id="goalSummaryText" class="text-slate-200 font-medium">주 5일 출석 · 하루 4개 이상 체크</span>
           </div>
-          <button onclick="window.openTimeChartModal()" class="text-[11px] text-sky-400 hover:underline font-medium">주간 시간 통계 보기 &rarr;</button>
+          <button onclick="window.openWeeklyReportModal()" class="text-[11px] text-rose-300 hover:underline font-semibold">📄 이번 주 결산 보고서(A4 2장) 출력 &rarr;</button>
         </div>
         <div class="grid grid-cols-7 gap-1.5 sm:gap-2" id="weekDaysGrid"></div>
       </section>
@@ -167,7 +171,7 @@
             <span id="lessonDayBadge" class="hidden px-2 py-0.5 text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full">🔥 주간 점검 / 레슨 데이</span>
             <span id="dailyTotalTimeChip" class="px-2.5 py-0.5 text-[11px] font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30 rounded-full"><i class="fa-regular fa-clock mr-1"></i>오늘 0분</span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5" id="dailyTargetSubInfo">오늘 목표를 체크하고 연습 시간(분)과 BPM을 기록하세요.</p>
+          <p class="text-xs text-slate-400 mt-0.5" id="dailyTargetSubInfo">체크하면 이전 연습 시간(없으면 10분)이 자동 입력됩니다.</p>
         </div>
         <div class="w-full sm:w-56">
           <div class="flex justify-between text-xs mb-1">
@@ -180,27 +184,28 @@
         </div>
       </section>
 
+      <!-- 통합 연습 큐 (레슨 숙제 + 개인 루틴 혼합 배치 및 순서 변경 가능) -->
       <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/80 pb-3">
-          <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span><h3 class="text-base font-bold text-white" id="hwSectionTitle">이번 주 레슨 숙제 & 주간 목표</h3></div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-sky-400 -ml-1"></span>
+              <h3 class="text-base font-bold text-white" id="hwSectionTitle">통합 연습 루틴 & 레슨 과제 보드</h3>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5">
+              <span class="text-amber-300 font-semibold">[📌 레슨숙제]</span>와 <span class="text-sky-300 font-semibold">[🔄 개인루틴]</span>이 구분 표시되며, 우측 <strong>▲/▼ 버튼</strong>으로 서로 섞어서 원하는 순서로 배열할 수 있습니다.
+            </p>
+          </div>
           <div class="flex flex-wrap items-center gap-1.5">
-            <button onclick="window.openHistoryModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 font-semibold transition flex items-center gap-1"><i class="fa-solid fa-box-archive"></i><span>지난 숙제 기록 (<span id="archiveCountBadge">0</span>)</span></button>
-            <button onclick="window.toggleRawNoteModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition"><i class="fa-regular fa-clipboard mr-1"></i> 숙제 노트 / 교체</button>
-            <button onclick="window.openAddModal('homework')" class="text-xs px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold transition"><i class="fa-solid fa-plus mr-1"></i> 항목 추가</button>
+            <button onclick="window.openHistoryModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 font-semibold transition flex items-center gap-1"><i class="fa-solid fa-box-archive"></i><span>보관함 (<span id="archiveCountBadge">0</span>)</span></button>
+            <button onclick="window.toggleRawNoteModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition"><i class="fa-regular fa-clipboard mr-1"></i>숙제 노트/교체</button>
+            <button onclick="window.openAddModal('homework')" class="text-xs px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition"><i class="fa-solid fa-plus mr-1"></i>숙제 추가</button>
+            <button onclick="window.openAddModal('routine')" class="text-xs px-2.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold transition"><i class="fa-solid fa-plus mr-1"></i>루틴 추가</button>
+            <button onclick="window.resetDefaultRoutines()" class="text-xs px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="기본 루틴 복구"><i class="fa-solid fa-rotate-left"></i></button>
           </div>
         </div>
-        <div id="homeworkList" class="space-y-3"></div>
-      </section>
-
-      <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
-        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/80 pb-3">
-          <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span><h3 class="text-base font-bold text-white" id="rtSectionTitle">개인 데일리 루틴</h3></div>
-          <div class="flex items-center gap-2">
-            <button onclick="window.resetDefaultRoutines()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="기본 루틴으로 초기화"><i class="fa-solid fa-rotate-left"></i></button>
-            <button onclick="window.openAddModal('routine')" class="text-xs px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition"><i class="fa-solid fa-plus mr-1"></i> 루틴 추가</button>
-          </div>
-        </div>
-        <div id="routineList" class="space-y-3"></div>
+        <div id="unifiedTaskList" class="space-y-2.5"></div>
       </section>
 
       <section class="card-bg rounded-2xl p-4 sm:p-5 shadow-lg space-y-2">
@@ -227,10 +232,7 @@
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 p-3 rounded-xl border border-slate-700/80">
         <div class="flex items-center gap-2">
           <select id="chartPartSelect" onchange="window.changeChartPart(this.value)" class="rounded-lg bg-slate-800 border border-slate-600 px-3 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-sky-400">
-            <option value="drum">🥁 드럼 연습</option>
-            <option value="bass">🎸 베이스 연습</option>
-            <option value="guitar">⚡ 일렉기타 연습</option>
-            <option value="vocal">🎤 보컬 연습</option>
+            <option value="drum">🥁 드럼 연습</option><option value="bass">🎸 베이스 연습</option><option value="guitar">⚡ 일렉기타 연습</option><option value="vocal">🎤 보컬 연습</option>
           </select>
           <span class="text-xs text-slate-500 hidden sm:inline">|</span>
           <span class="text-xs font-semibold text-emerald-400" id="chartSelectedWeekSummary">이번 주: 0:00</span>
@@ -249,12 +251,7 @@
           </div>
           <div class="flex-1 relative flex flex-col justify-between pb-6">
             <div class="absolute inset-0 bottom-6 flex flex-col justify-between pointer-events-none">
-              <div class="border-b border-slate-800/90 w-full h-0"></div>
-              <div class="border-b border-slate-800/90 w-full h-0"></div>
-              <div class="border-b border-slate-800/90 w-full h-0"></div>
-              <div class="border-b border-slate-800/90 w-full h-0"></div>
-              <div class="border-b border-slate-800/90 w-full h-0"></div>
-              <div class="border-b border-slate-700 w-full h-0"></div>
+              <div class="border-b border-slate-800/90 w-full h-0"></div><div class="border-b border-slate-800/90 w-full h-0"></div><div class="border-b border-slate-800/90 w-full h-0"></div><div class="border-b border-slate-800/90 w-full h-0"></div><div class="border-b border-slate-800/90 w-full h-0"></div><div class="border-b border-slate-700 w-full h-0"></div>
             </div>
             <div id="weeklyBarChartCols" class="relative z-10 flex-1 grid grid-cols-7 gap-2 sm:gap-3 items-end pt-5 px-1"></div>
           </div>
@@ -280,14 +277,14 @@
     </div>
   </div>
 
-  <!-- 모달 G: 주간 목표 수치 설정 모달 -->
+  <!-- 모달 G: 주간 목표 수치 & 레슨 기준일 설정 모달 -->
   <div id="goalModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-        <div class="flex items-center gap-2"><i class="fa-solid fa-bullseye text-emerald-400"></i><h4 class="font-bold text-white text-base" id="goalModalTitle">주간 목표 수치 설정</h4></div>
+        <div class="flex items-center gap-2"><i class="fa-solid fa-bullseye text-emerald-400"></i><h4 class="font-bold text-white text-base" id="goalModalTitle">주간 목표 & 레슨 기준일 설정</h4></div>
         <button onclick="window.closeGoalModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="space-y-4">
+      <div class="space-y-3.5">
         <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3.5 space-y-2">
           <div class="flex justify-between items-center">
             <label class="text-xs font-bold text-white">1. 주간 목표 연습 일수</label>
@@ -303,6 +300,22 @@
           <input type="range" id="targetDailyChecksSlider" min="1" max="15" value="4" oninput="window.updateGoalPreview()" class="w-full accent-emerald-400 cursor-pointer">
           <p class="text-[11px] text-slate-400">* 현재 전체 항목 <strong id="currentTotalItemsCount" class="text-white">10</strong>개 중 위 개수 이상 체크 시 초록불 달성</p>
         </div>
+        <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3.5 space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-white">3. 레슨 / 주간 점검 기준 요일</label>
+            <span class="text-[11px] font-bold text-sky-400">선택 요일부터 한 주 시작</span>
+          </div>
+          <select id="lessonDaySelect" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-400">
+            <option value="0">일요일 (일 ~ 토)</option>
+            <option value="1">월요일 (월 ~ 일)</option>
+            <option value="2">화요일 (화 ~ 월)</option>
+            <option value="3">수요일 (수 ~ 화)</option>
+            <option value="4">목요일 (목 ~ 수)</option>
+            <option value="5">금요일 (금 ~ 목)</option>
+            <option value="6">토요일 (토 ~ 금)</option>
+          </select>
+          <p class="text-[11px] text-slate-400">* 파트마다 레슨 요일이 다르면 각자 설정할 수 있습니다.</p>
+        </div>
         <div class="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-3 text-xs">
           이번 주 총 <strong class="text-white" id="previewWeeklyTotalChecks">20</strong>회 체크 시 주간 달성률 100% 도달!
         </div>
@@ -314,6 +327,23 @@
     </div>
   </div>
 
+  <!-- 모달 R: A4 2장 주간 연습 결산 보고서 & PDF 출력 모달 -->
+  <div id="weeklyReportModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
+    <div class="report-shell bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full p-4 sm:p-6 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto custom-scroll">
+      <div class="no-print flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-3 sticky top-0 bg-slate-900/95 backdrop-blur z-10">
+        <div>
+          <h4 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-file-pdf text-rose-400"></i><span>주간 연습 종합 보고서 (A4 2페이지 규격)</span></h4>
+          <p class="text-xs text-slate-400">인쇄 창에서 <strong>[대상: PDF로 저장]</strong> 및 <strong>[배경 그래픽 표시]</strong>를 켜면 A4 2장으로 깔끔하게 출력됩니다.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg"><i class="fa-solid fa-print"></i> PDF 저장 / 인쇄하기</button>
+          <button onclick="window.closeWeeklyReportModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs">닫기</button>
+        </div>
+      </div>
+      <div id="weeklyReportPagesContainer" class="space-y-6"></div>
+    </div>
+  </div>
+
   <!-- 모달 A: 추천곡 / 합주곡 모달 -->
   <div id="songModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
@@ -322,8 +352,8 @@
         <button onclick="window.closeSongModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-3">
-        <div><label class="text-xs text-slate-400 block mb-1">아티스트 *</label><input type="text" id="songArtistInput" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400"></div>
-        <div><label class="text-xs text-slate-400 block mb-1">곡 제목 *</label><input type="text" id="songTitleInput" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-400"></div>
+        <div><label class="text-xs text-slate-400 block mb-1">아티스트 *</label><input type="text" id="songArtistInput" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white"></div>
+        <div><label class="text-xs text-slate-400 block mb-1">곡 제목 *</label><input type="text" id="songTitleInput" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white"></div>
         <div id="songProposerWrapper">
           <label class="text-xs text-slate-400 block mb-1">추천하는 파트</label>
           <select id="songProposerSelect" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white">
@@ -445,7 +475,7 @@
         id: 'drum', name: '드럼', short: '드럼', eng: 'DRUM', emoji: '🥁', icon: 'fa-solid fa-drum',
         accentText: 'text-amber-400', accentBg: 'bg-amber-500/20', accentBorder: 'border-amber-500/40',
         voteActiveClass: 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold',
-        defaultGoalConfig: { targetDaysPerWeek: 5, targetChecksPerDay: 4 },
+        defaultGoalConfig: { targetDaysPerWeek: 5, targetChecksPerDay: 4, lessonDayOfWeek: 0 },
         rawNote: `1. 더블킥 연습 슬라이드 연습으로도 꼭 추가해서 (느린템포에서도 가능하게) 갱신입니다\n1-1. RLKK(슬라이드) / RLK & KRL / KLR = 총 네개 패턴도 연습입니다\n2. 라틴킥 패턴 위에 파라디들 연습 (100~110)\n3. 업스트로크 연습 (120~135)\n3-2. 더블스트로크 업모션 연습\n4. 추가된 모울러&무브먼트 연습`,
         defaultHomeworks: [
           { id: 'hw-1', title: '1. 더블킥 슬라이드 연습 (느린 템포 갱신)', sub: '느린 템포에서도 슬라이드 모션이 자연스럽게 이어지도록 컨트롤', target: '느린 템포 컨트롤 집중' },
@@ -466,9 +496,9 @@
         id: 'bass', name: '베이스', short: '베이스', eng: 'BASS', emoji: '🎸', icon: 'fa-solid fa-guitar',
         accentText: 'text-emerald-400', accentBg: 'bg-emerald-500/20', accentBorder: 'border-emerald-500/40',
         voteActiveClass: 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold',
-        defaultGoalConfig: { targetDaysPerWeek: 4, targetChecksPerDay: 3 },
+        defaultGoalConfig: { targetDaysPerWeek: 4, targetChecksPerDay: 3, lessonDayOfWeek: 0 },
         rawNote: `이번 주 베이스 레슨 숙제나 개인 목표를 이곳에 붙여넣고 관리하세요!`,
-        defaultHomeworks: [{ id: 'bass-hw-1', title: '이번 주 레슨 숙제 / 중점 연습 패턴', sub: '우측 ✏️ 버튼이나 상단 [항목 추가]로 변경하세요.', target: '목표 BPM 기록' }],
+        defaultHomeworks: [{ id: 'bass-hw-1', title: '이번 주 레슨 숙제 / 중점 연습 패턴', sub: '우측 ✏️ 버튼이나 상단 [숙제 추가]로 변경하세요.', target: '목표 BPM 기록' }],
         defaultRoutines: [
           { id: 'bass-rt-1', title: '크로매틱 & 프렛보드 핑거링 워밍업', sub: '왼손 운지 밸런스 및 오른손 교차 피킹 일정한 톤 유지', target: '워밍업 10분' },
           { id: 'bass-rt-2', title: '리듬 트레이닝 & 그루브 (16분음표 / 고스트 노트)', sub: '드럼 가이드에 맞춘 타이트한 타임감 및 뮤트 컨트롤', target: '메트로놈 정박' },
@@ -480,9 +510,9 @@
         id: 'guitar', name: '일렉기타', short: '일렉', eng: 'ELECTRIC GUITAR', emoji: '⚡', icon: 'fa-solid fa-bolt',
         accentText: 'text-violet-400', accentBg: 'bg-violet-500/20', accentBorder: 'border-violet-500/40',
         voteActiveClass: 'bg-violet-500/20 border-violet-400 text-violet-300 font-bold',
-        defaultGoalConfig: { targetDaysPerWeek: 4, targetChecksPerDay: 3 },
+        defaultGoalConfig: { targetDaysPerWeek: 4, targetChecksPerDay: 3, lessonDayOfWeek: 0 },
         rawNote: `이번 주 일렉기타 레슨 숙제나 카피 목표를 이곳에 붙여넣고 관리하세요!`,
-        defaultHomeworks: [{ id: 'gt-hw-1', title: '이번 주 레슨 숙제 / 솔로·리프 과업', sub: '우측 ✏️ 버튼이나 상단 [항목 추가]로 변경하세요.', target: '목표 BPM 기록' }],
+        defaultHomeworks: [{ id: 'gt-hw-1', title: '이번 주 레슨 숙제 / 솔로·리프 과업', sub: '우측 ✏️ 버튼이나 상단 [숙제 추가]로 변경하세요.', target: '목표 BPM 기록' }],
         defaultRoutines: [
           { id: 'gt-rt-1', title: '크로매틱 & 스케일 피킹 워밍업', sub: '얼터네이트 피킹 싱크로율 및 불필요한 현 노이즈 뮤트 체크', target: '워밍업 10분' },
           { id: 'gt-rt-2', title: '코드 체인지 & 리듬 커팅 / 배킹 연습', sub: '16비트 커팅 및 보이싱 전환 시 박자 흔들림 없이 유지', target: '메트로놈 정박' },
@@ -494,9 +524,9 @@
         id: 'vocal', name: '보컬', short: '보컬', eng: 'VOCAL', emoji: '🎤', icon: 'fa-solid fa-microphone-lines',
         accentText: 'text-rose-400', accentBg: 'bg-rose-500/20', accentBorder: 'border-rose-500/40',
         voteActiveClass: 'bg-rose-500/20 border-rose-400 text-rose-300 font-bold',
-        defaultGoalConfig: { targetDaysPerWeek: 4, targetChecksPerDay: 3 },
+        defaultGoalConfig: { targetDaysPerWeek: 4, targetChecksPerDay: 3, lessonDayOfWeek: 0 },
         rawNote: `이번 주 보컬 레슨 숙제나 곡 연습 포인트를 이곳에 붙여넣고 관리하세요!`,
-        defaultHomeworks: [{ id: 'vc-hw-1', title: '이번 주 보컬 레슨 숙제 / 곡 구간 집중 연습', sub: '우측 ✏️ 버튼이나 상단 [항목 추가]로 변경하세요.', target: '레슨 포인트 적용' }],
+        defaultHomeworks: [{ id: 'vc-hw-1', title: '이번 주 보컬 레슨 숙제 / 곡 구간 집중 연습', sub: '우측 ✏️ 버튼이나 상단 [숙제 추가]로 변경하세요.', target: '레슨 포인트 적용' }],
         defaultRoutines: [
           { id: 'vc-rt-1', title: '호흡 압력 유지 & 립트릴(Lip Trill) 워밍업', sub: '본 가창 전 성대 이완 및 일정한 호흡 지지력 깨우기', target: '워밍업 10분' },
           { id: 'vc-rt-2', title: '스케일 발성 & 공명점/성구 전환 연습', sub: '미들보이스-헤드보이스 연결 및 고음역 목 조임 방지', target: '발성 루틴' },
@@ -527,14 +557,6 @@
       return `${y}-${m}-${d}`;
     }
 
-    function getWeekStartKey(dateStr) {
-      const [y, m, d] = dateStr.split('-').map(Number);
-      const current = new Date(y, m - 1, d);
-      const sunday = new Date(current);
-      sunday.setDate(current.getDate() - current.getDay());
-      return getFormatDate(sunday);
-    }
-
     function createInitialPartsData() {
       const parts = {};
       Object.keys(PART_META).forEach(key => {
@@ -542,6 +564,7 @@
           rawLessonNote: PART_META[key].rawNote,
           homeworks: JSON.parse(JSON.stringify(PART_META[key].defaultHomeworks)),
           routines: JSON.parse(JSON.stringify(PART_META[key].defaultRoutines)),
+          taskOrder: [],
           goalConfig: { ...PART_META[key].defaultGoalConfig },
           logs: {},
           weeklySnapshots: {},
@@ -558,6 +581,50 @@
       updatedAt: 0
     };
 
+    function getPartGoalConfig(partKey) {
+      const pData = state.parts[partKey];
+      const def = PART_META[partKey]?.defaultGoalConfig || { targetDaysPerWeek: 5, targetChecksPerDay: 3, lessonDayOfWeek: 0 };
+      return {
+        targetDaysPerWeek: Number(pData?.goalConfig?.targetDaysPerWeek) || def.targetDaysPerWeek,
+        targetChecksPerDay: Number(pData?.goalConfig?.targetChecksPerDay) || def.targetChecksPerDay,
+        lessonDayOfWeek: pData?.goalConfig?.lessonDayOfWeek !== undefined ? Number(pData.goalConfig.lessonDayOfWeek) : 0
+      };
+    }
+
+    function getWeekStartKey(dateStr, partKey = currentPart) {
+      const targetPart = PART_META[partKey] ? partKey : 'drum';
+      const startDay = getPartGoalConfig(targetPart).lessonDayOfWeek;
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const current = new Date(y, m - 1, d);
+      const diff = (current.getDay() - startDay + 7) % 7;
+      const startDate = new Date(current);
+      startDate.setDate(current.getDate() - diff);
+      return getFormatDate(startDate);
+    }
+
+    function getWeekDates(baseDateStr, partKey = currentPart) {
+      const targetPart = PART_META[partKey] ? partKey : 'drum';
+      const startDay = getPartGoalConfig(targetPart).lessonDayOfWeek;
+      const startKey = getWeekStartKey(baseDateStr, targetPart);
+      const [y, m, d] = startKey.split('-').map(Number);
+      const startObj = new Date(y, m - 1, d);
+      const baseDayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const temp = new Date(startObj);
+        temp.setDate(startObj.getDate() + i);
+        const dow = temp.getDay();
+        const isLessonDay = dow === startDay;
+        days.push({
+          dateStr: getFormatDate(temp),
+          dayName: isLessonDay ? `${baseDayNames[dow]}(레슨)` : baseDayNames[dow],
+          dayNum: temp.getDate(),
+          isSunday: isLessonDay
+        });
+      }
+      return days;
+    }
+
     function normalizeDataObject(rawObj) {
       const baseParts = createInitialPartsData();
       if (rawObj.parts) {
@@ -567,9 +634,11 @@
               rawLessonNote: rawObj.parts[k].rawLessonNote ?? baseParts[k].rawLessonNote,
               homeworks: rawObj.parts[k].homeworks ?? baseParts[k].homeworks,
               routines: rawObj.parts[k].routines ?? baseParts[k].routines,
+              taskOrder: Array.isArray(rawObj.parts[k].taskOrder) ? rawObj.parts[k].taskOrder : [],
               goalConfig: {
                 targetDaysPerWeek: Number(rawObj.parts[k].goalConfig?.targetDaysPerWeek) || PART_META[k].defaultGoalConfig.targetDaysPerWeek,
-                targetChecksPerDay: Number(rawObj.parts[k].goalConfig?.targetChecksPerDay) || PART_META[k].defaultGoalConfig.targetChecksPerDay
+                targetChecksPerDay: Number(rawObj.parts[k].goalConfig?.targetChecksPerDay) || PART_META[k].defaultGoalConfig.targetChecksPerDay,
+                lessonDayOfWeek: rawObj.parts[k].goalConfig?.lessonDayOfWeek !== undefined ? Number(rawObj.parts[k].goalConfig.lessonDayOfWeek) : 0
               },
               logs: rawObj.parts[k].logs ?? {},
               weeklySnapshots: rawObj.parts[k].weeklySnapshots ?? {},
@@ -584,6 +653,7 @@
             rawLessonNote: rawObj.rawLessonNote ?? baseParts.drum.rawLessonNote,
             homeworks: rawObj.homeworks ?? baseParts.drum.homeworks,
             routines: rawObj.routines ?? baseParts.drum.routines,
+            taskOrder: [],
             goalConfig: { ...PART_META.drum.defaultGoalConfig },
             logs: rawObj.logs ?? {},
             weeklySnapshots: {},
@@ -604,24 +674,16 @@
       const pData = state.parts[targetPart];
       if (!pData.weeklySnapshots) pData.weeklySnapshots = {};
       if (!Array.isArray(pData.homeworkHistory)) pData.homeworkHistory = [];
+      if (!Array.isArray(pData.taskOrder)) pData.taskOrder = [];
       if (!pData.goalConfig) pData.goalConfig = { ...PART_META[targetPart].defaultGoalConfig };
       return pData;
-    }
-
-    function getPartGoalConfig(partKey) {
-      const pData = state.parts[partKey];
-      const def = PART_META[partKey]?.defaultGoalConfig || { targetDaysPerWeek: 5, targetChecksPerDay: 3 };
-      return {
-        targetDaysPerWeek: Number(pData?.goalConfig?.targetDaysPerWeek) || def.targetDaysPerWeek,
-        targetChecksPerDay: Number(pData?.goalConfig?.targetChecksPerDay) || def.targetChecksPerDay
-      };
     }
 
     function getHomeworksForPartAndDate(partKey, dateStr) {
       const pData = state.parts[partKey];
       if (!pData) return [];
-      const weekKey = getWeekStartKey(dateStr);
-      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()));
+      const weekKey = getWeekStartKey(dateStr, partKey);
+      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), partKey);
       if (weekKey !== currentWeekKey && pData.weeklySnapshots?.[weekKey]?.homeworks) {
         return pData.weeklySnapshots[weekKey].homeworks;
       }
@@ -631,20 +693,52 @@
     function getRawNoteForPartAndDate(partKey, dateStr) {
       const pData = state.parts[partKey];
       if (!pData) return '';
-      const weekKey = getWeekStartKey(dateStr);
-      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()));
+      const weekKey = getWeekStartKey(dateStr, partKey);
+      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), partKey);
       if (weekKey !== currentWeekKey && pData.weeklySnapshots?.[weekKey]?.rawLessonNote !== undefined) {
         return pData.weeklySnapshots[weekKey].rawLessonNote;
       }
       return pData.rawLessonNote || '';
     }
 
+    function getOrderedUnifiedTasks(partKey, dateStr) {
+      const pData = state.parts[partKey];
+      if (!pData) return [];
+      const activeHws = getHomeworksForPartAndDate(partKey, dateStr).map(h => ({ ...h, itemType: 'homework' }));
+      const routines = (pData.routines || []).map(r => ({ ...r, itemType: 'routine' }));
+      const allMap = new Map();
+      [...activeHws, ...routines].forEach(it => allMap.set(it.id, it));
+
+      const order = Array.isArray(pData.taskOrder) ? pData.taskOrder : [];
+      const ordered = [];
+      order.forEach(id => {
+        if (allMap.has(id)) {
+          ordered.push(allMap.get(id));
+          allMap.delete(id);
+        }
+      });
+      allMap.forEach(it => ordered.push(it));
+      pData.taskOrder = ordered.map(it => it.id);
+      return ordered;
+    }
+
+    function getLastPracticeTimeOrDefault(partKey, itemId, currentDateStr) {
+      const pData = state.parts[partKey];
+      if (!pData?.logs) return 10;
+      const sortedDates = Object.keys(pData.logs).filter(d => d !== currentDateStr).sort((a, b) => b.localeCompare(a));
+      for (const d of sortedDates) {
+        const t = Number(pData.logs[d]?.times?.[itemId]);
+        if (t > 0) return t;
+      }
+      return 10;
+    }
+
     function syncCurrentWeekSnapshot(partKey, dateStr) {
       const pData = state.parts[partKey];
       if (!pData) return;
       if (!pData.weeklySnapshots) pData.weeklySnapshots = {};
-      const weekKey = getWeekStartKey(dateStr);
-      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()));
+      const weekKey = getWeekStartKey(dateStr, partKey);
+      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), partKey);
       if (weekKey === currentWeekKey || !pData.weeklySnapshots[weekKey]) {
         pData.weeklySnapshots[weekKey] = {
           rawLessonNote: pData.rawLessonNote || '',
@@ -775,21 +869,6 @@
       } catch (e) { setSyncBadge('error', '저장 오류'); }
     }
 
-    function getWeekDates(baseDateStr) {
-      const [y, m, d] = baseDateStr.split('-').map(Number);
-      const current = new Date(y, m - 1, d);
-      const sunday = new Date(current);
-      sunday.setDate(current.getDate() - current.getDay());
-      const days = [];
-      const dayNames = ['일(점검)', '월', '화', '수', '목', '금', '토'];
-      for (let i = 0; i < 7; i++) {
-        const temp = new Date(sunday);
-        temp.setDate(sunday.getDate() + i);
-        days.push({ dateStr: getFormatDate(temp), dayName: dayNames[i], dayNum: temp.getDate(), isSunday: i === 0 });
-      }
-      return days;
-    }
-
     function formatMinutesToHMM(totalMin) {
       const m = Math.max(0, Math.round(Number(totalMin) || 0));
       const hrs = Math.floor(m / 60);
@@ -813,7 +892,7 @@
     }
 
     function getPartWeekTotalMinutes(partKey, weekStartDateStr) {
-      const days = getWeekDates(weekStartDateStr);
+      const days = getWeekDates(weekStartDateStr, partKey);
       return days.reduce((sum, d) => sum + getPartDayTotalMinutes(partKey, d.dateStr), 0);
     }
 
@@ -872,7 +951,6 @@
         document.getElementById('partHeaderTitle').textContent = `${meta.eng} ROUTINE TRACKER`;
         document.getElementById('calendarPartLabel').textContent = meta.name;
         document.getElementById('memoPartLabel').textContent = meta.name;
-        document.getElementById('rtSectionTitle').textContent = `${meta.name} 개인 데일리 루틴`;
         document.getElementById('archiveCountBadge').textContent = (pData.homeworkHistory || []).length;
         loungeStats.classList.add('hidden'); loungeStats.classList.remove('flex');
         partStats.classList.remove('hidden'); partStats.classList.add('flex');
@@ -983,14 +1061,15 @@
 
     function renderWeekCalendar() {
       if (currentPart === 'lounge') return;
-      const weekDays = getWeekDates(state.selectedDate);
+      const weekDays = getWeekDates(state.selectedDate, currentPart);
       const grid = document.getElementById('weekDaysGrid');
       const todayStr = getFormatDate(new Date());
-      const selectedWeekKey = getWeekStartKey(state.selectedDate);
-      const currentWeekKey = getWeekStartKey(todayStr);
+      const selectedWeekKey = getWeekStartKey(state.selectedDate, currentPart);
+      const currentWeekKey = getWeekStartKey(todayStr, currentPart);
       const goalCfg = getPartGoalConfig(currentPart);
+      const korDays = ['일', '월', '화', '수', '목', '금', '토'];
 
-      document.getElementById('currentWeekRange').textContent = `주간 범위: ${weekDays[0].dateStr} (일) ~ ${weekDays[6].dateStr} (토)`;
+      document.getElementById('currentWeekRange').textContent = `주간 범위: ${weekDays[0].dateStr} (${korDays[goalCfg.lessonDayOfWeek]}·레슨) ~ ${weekDays[6].dateStr}`;
       const pastIndicator = document.getElementById('pastWeekIndicator');
       if (selectedWeekKey !== currentWeekKey) pastIndicator.classList.remove('hidden');
       else pastIndicator.classList.add('hidden');
@@ -1035,7 +1114,7 @@
       if (badgeEl) badgeEl.textContent = formatMinutesToKorean(weeklyTotalMinutes);
 
       document.getElementById('goalSummaryText').textContent =
-        `주 ${goalCfg.targetDaysPerWeek}일 출석 · 하루 ${goalCfg.targetChecksPerDay}개 이상 체크 (이번 주 누적: ${formatMinutesToKorean(weeklyTotalMinutes)})`;
+        `레슨일: 매주 ${korDays[goalCfg.lessonDayOfWeek]}요일 · 주 ${goalCfg.targetDaysPerWeek}일 출석 · 하루 ${goalCfg.targetChecksPerDay}개 이상 (이번 주 누적: ${formatMinutesToKorean(weeklyTotalMinutes)})`;
     }
 
     function renderTaskLists() {
@@ -1047,22 +1126,23 @@
       const [y, m, d] = dateStr.split('-').map(Number);
       const dayOfWeek = new Date(y, m - 1, d).getDay();
       const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      const goalCfg = getPartGoalConfig(currentPart);
 
-      const selectedWeekKey = getWeekStartKey(dateStr);
-      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()));
+      const selectedWeekKey = getWeekStartKey(dateStr, currentPart);
+      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), currentPart);
       const isPastSnapshot = selectedWeekKey !== currentWeekKey && !!pData.weeklySnapshots?.[selectedWeekKey];
 
       document.getElementById('selectedDateTitle').textContent = `[${meta.name}] ${dateStr} (${dayNames[dayOfWeek]}) 체크리스트`;
       document.getElementById('hwSectionTitle').textContent = isPastSnapshot
-        ? `📅 ${selectedWeekKey} 주간 레슨 숙제 (기록 보존됨)`
-        : `이번 주 ${meta.name} 레슨 숙제 & 주간 목표`;
+        ? `📅 ${selectedWeekKey} 주간 연습 보드 (기록 보존됨)`
+        : `${meta.name} 통합 연습 보드 (레슨숙제 + 개인루틴 자유 배열)`;
 
       const lessonBadge = document.getElementById('lessonDayBadge');
-      if (dayOfWeek === 0) lessonBadge.classList.remove('hidden');
+      if (dayOfWeek === goalCfg.lessonDayOfWeek) lessonBadge.classList.remove('hidden');
       else lessonBadge.classList.add('hidden');
 
       const comp = getPartDayCompletion(currentPart, dateStr);
-      document.getElementById('dailyTargetSubInfo').textContent = `전체 ${comp.total}개 항목 중 오늘 ${comp.targetDaily}개 이상 체크하면 일일 목표가 달성(🔥)됩니다!`;
+      document.getElementById('dailyTargetSubInfo').textContent = `전체 ${comp.total}개 중 ${comp.targetDaily}개 이상 체크 시 목표 달성! (체크 시 이전 연습시간 또는 기본 10분 자동 입력)`;
       document.getElementById('dailyProgressText').textContent = `${comp.done} / 목표 ${comp.targetDaily}개 (${comp.rate}%)`;
       document.getElementById('dailyProgressBar').style.width = `${comp.rate}%`;
 
@@ -1070,27 +1150,38 @@
       const timeChip = document.getElementById('dailyTotalTimeChip');
       if (timeChip) timeChip.innerHTML = `<i class="fa-regular fa-clock mr-1"></i>오늘 ${formatMinutesToKorean(todayMins)}`;
 
-      const activeHomeworks = getHomeworksForPartAndDate(currentPart, dateStr);
-      document.getElementById('homeworkList').innerHTML = activeHomeworks.map(item => createItemHTML(item, 'homework', dayLog)).join('');
-      document.getElementById('routineList').innerHTML = (pData.routines || []).map(item => createItemHTML(item, 'routine', dayLog)).join('');
+      const unifiedList = getOrderedUnifiedTasks(currentPart, dateStr);
+      const listEl = document.getElementById('unifiedTaskList');
+      if (listEl) {
+        listEl.innerHTML = unifiedList.map((item, idx) =>
+          createItemHTML(item, item.itemType, dayLog, idx, unifiedList.length)
+        ).join('');
+      }
       document.getElementById('dailyMemoInput').value = dayLog.memo || '';
     }
 
-    function createItemHTML(item, type, dayLog) {
+    function createItemHTML(item, type, dayLog, idx, totalLen) {
       const checked = !!dayLog.checks?.[item.id];
       const bpmVal = dayLog.bpms?.[item.id] || '';
       const timeVal = dayLog.times?.[item.id] ?? '';
-      const badgeColor = type === 'homework' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' : 'bg-sky-500/10 text-sky-300 border-sky-500/30';
+      const isHw = type === 'homework';
+
+      const typePill = isHw
+        ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-extrabold shrink-0">📌 레슨숙제</span>`
+        : `<span class="text-[10px] px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40 font-extrabold shrink-0">🔄 개인루틴</span>`;
+      const leftAccent = isHw ? 'border-l-4 border-l-amber-400' : 'border-l-4 border-l-sky-400';
+      const badgeColor = isHw ? 'bg-amber-500/10 text-amber-200 border-amber-500/30' : 'bg-sky-500/10 text-sky-200 border-sky-500/30';
 
       return `
-        <div class="p-3.5 rounded-xl bg-slate-900/80 border ${checked ? 'border-emerald-500/50 bg-emerald-950/10' : 'border-slate-700/70'} flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition">
+        <div class="p-3.5 rounded-xl bg-slate-900/85 border ${checked ? 'border-emerald-500/50 bg-emerald-950/10' : 'border-slate-700/70'} ${leftAccent} flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition">
           <label class="flex items-start gap-3 cursor-pointer flex-1 select-none">
             <input type="checkbox" class="hidden custom-checkbox" ${checked ? 'checked' : ''} onchange="window.toggleCheck('${item.id}')">
             <div class="w-5 h-5 mt-0.5 rounded-md border-2 border-slate-500 flex items-center justify-center transition shrink-0">
               <i class="fa-solid fa-check text-slate-950 text-xs opacity-0 transform scale-50 transition"></i>
             </div>
             <div class="space-y-1 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${typePill}
                 <span class="text-sm font-bold ${checked ? 'line-through text-slate-400' : 'text-white'}">${item.title}</span>
                 ${item.target ? `<span class="text-[11px] px-2 py-0.5 rounded-md border ${badgeColor} font-medium">${item.target}</span>` : ''}
               </div>
@@ -1098,12 +1189,16 @@
             </div>
           </label>
           <div class="flex flex-wrap items-center gap-1.5 self-end sm:self-center shrink-0">
+            <div class="flex items-center bg-slate-800/90 border border-slate-700 rounded-lg overflow-hidden mr-0.5">
+              <button onclick="window.moveTaskOrder('${item.id}', -1)" ${idx === 0 ? 'disabled' : ''} title="위로 이동" class="px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-700 disabled:opacity-30"><i class="fa-solid fa-chevron-up"></i></button>
+              <button onclick="window.moveTaskOrder('${item.id}', 1)" ${idx === totalLen - 1 ? 'disabled' : ''} title="아래로 이동" class="px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-700 disabled:opacity-30 border-l border-slate-700"><i class="fa-solid fa-chevron-down"></i></button>
+            </div>
             <div class="flex items-center bg-slate-800 border border-slate-700 focus-within:border-sky-400 rounded-lg px-2 py-1" title="연습 시간(분) 입력">
               <i class="fa-regular fa-clock text-sky-400 text-xs mr-1"></i>
               <input type="number" min="0" max="600" step="5" placeholder="0" value="${timeVal}" onchange="window.savePracticeTime('${item.id}', this.value)" class="bg-transparent text-xs text-white w-10 text-right focus:outline-none font-semibold">
               <span class="text-[11px] text-slate-400 ml-0.5">분</span>
             </div>
-            <div class="flex items-center bg-slate-800 border border-slate-700 focus-within:border-amber-400 rounded-lg px-2.5 py-1 mr-0.5">
+            <div class="flex items-center bg-slate-800 border border-slate-700 focus-within:border-amber-400 rounded-lg px-2.5 py-1">
               <i class="fa-solid fa-gauge-high text-slate-400 text-xs mr-1.5"></i>
               <input type="text" placeholder="BPM / 상태" value="${bpmVal}" onchange="window.saveBpm('${item.id}', this.value)" class="bg-transparent text-xs text-white w-20 sm:w-24 focus:outline-none">
             </div>
@@ -1112,6 +1207,18 @@
           </div>
         </div>`;
     }
+
+    window.moveTaskOrder = (itemId, direction) => {
+      const pData = getActivePartData();
+      const unified = getOrderedUnifiedTasks(currentPart, state.selectedDate);
+      const ids = unified.map(it => it.id);
+      const idx = ids.indexOf(itemId);
+      const targetIdx = idx + direction;
+      if (idx === -1 || targetIdx < 0 || targetIdx >= ids.length) return;
+      [ids[idx], ids[targetIdx]] = [ids[targetIdx], ids[idx]];
+      pData.taskOrder = ids;
+      saveState();
+    };
 
     function ensureDayLog(dateStr) {
       const pData = getActivePartData();
@@ -1155,16 +1262,16 @@
       };
       const theme = barThemes[partKey] || barThemes.bass;
 
-      const baseWeekKey = getWeekStartKey(state.selectedDate);
+      const baseWeekKey = getWeekStartKey(state.selectedDate, partKey);
       const [by, bm, bd] = baseWeekKey.split('-').map(Number);
-      const baseSunday = new Date(by, bm - 1, bd);
-      baseSunday.setDate(baseSunday.getDate() + (chartWeekOffset * 7));
+      const baseStart = new Date(by, bm - 1, bd);
+      baseStart.setDate(baseStart.getDate() + (chartWeekOffset * 7));
 
       const weeksData = [];
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       for (let i = 6; i >= 0; i--) {
-        const wStart = new Date(baseSunday);
-        wStart.setDate(baseSunday.getDate() - (i * 7));
+        const wStart = new Date(baseStart);
+        wStart.setDate(baseStart.getDate() - (i * 7));
         const wKey = getFormatDate(wStart);
         const totalMin = getPartWeekTotalMinutes(partKey, wKey);
         const label = `${monthNames[wStart.getMonth()]} ${wStart.getDate()}`;
@@ -1203,7 +1310,7 @@
       document.getElementById('chart7WeeksTotal').textContent = formatMinutesToKorean(sum7Weeks);
       document.getElementById('chart7WeeksAvg').textContent = formatMinutesToKorean(avg7Weeks);
 
-      const focusDays = getWeekDates(focusWeek.weekKey);
+      const focusDays = getWeekDates(focusWeek.weekKey, partKey);
       document.getElementById('chartBreakdownWeekLabel').textContent = `${focusDays[0].dateStr} ~ ${focusDays[6].dateStr}`;
 
       const itemMinutesMap = {};
@@ -1223,7 +1330,7 @@
       const sortedBreakdown = Object.entries(itemMinutesMap).sort((a, b) => b[1] - a[1]);
       const breakdownEl = document.getElementById('chartItemBreakdown');
       if (sortedBreakdown.length === 0) {
-        breakdownEl.innerHTML = `<div class="text-slate-500 py-3 text-center">이 주간에 기록된 연습 시간이 없습니다. 각 연습 항목 우측에 시간(분)을 입력해 보세요!</div>`;
+        breakdownEl.innerHTML = `<div class="text-slate-500 py-3 text-center">이 주간에 기록된 연습 시간이 없습니다.</div>`;
       } else {
         breakdownEl.innerHTML = sortedBreakdown.map(([itemId, min]) => {
           const pct = Math.round((min / Math.max(1, focusWeek.totalMin)) * 100);
@@ -1254,12 +1361,14 @@
       const activeHomeworks = getHomeworksForPartAndDate(targetPart, state.selectedDate);
       const routines = state.parts[targetPart]?.routines || [];
       const totalItems = Math.max(1, activeHomeworks.length + routines.length);
-      document.getElementById('goalModalTitle').textContent = `[${meta.name}] 주간 목표 수치 설정`;
+      document.getElementById('goalModalTitle').textContent = `[${meta.name}] 주간 목표 & 레슨 기준일 설정`;
       const daysSlider = document.getElementById('targetDaysSlider');
       const checksSlider = document.getElementById('targetDailyChecksSlider');
       daysSlider.value = goalCfg.targetDaysPerWeek;
       checksSlider.max = Math.max(15, totalItems);
       checksSlider.value = goalCfg.targetChecksPerDay;
+      const lessonSelect = document.getElementById('lessonDaySelect');
+      if (lessonSelect) lessonSelect.value = String(goalCfg.lessonDayOfWeek ?? 0);
       document.getElementById('currentTotalItemsCount').textContent = activeHomeworks.length + routines.length;
       window.updateGoalPreview();
       const modal = document.getElementById('goalModal');
@@ -1278,9 +1387,11 @@
     };
     window.saveGoalConfig = () => {
       const pData = getActivePartData();
+      const lessonSelect = document.getElementById('lessonDaySelect');
       pData.goalConfig = {
         targetDaysPerWeek: Number(document.getElementById('targetDaysSlider').value) || 5,
-        targetChecksPerDay: Number(document.getElementById('targetDailyChecksSlider').value) || 4
+        targetChecksPerDay: Number(document.getElementById('targetDailyChecksSlider').value) || 4,
+        lessonDayOfWeek: lessonSelect ? Number(lessonSelect.value) : 0
       };
       window.closeGoalModal();
       saveState();
@@ -1289,9 +1400,9 @@
     function archiveCurrentHomeworkSet(customLabel = '') {
       const pData = getActivePartData();
       if (!pData.homeworks || pData.homeworks.length === 0) return;
-      const weekDays = getWeekDates(state.selectedDate);
+      const weekDays = getWeekDates(state.selectedDate, currentPart);
       const label = customLabel.trim() || `${weekDays[0].dateStr} 주간 레슨 숙제`;
-      const weekKey = getWeekStartKey(state.selectedDate);
+      const weekKey = getWeekStartKey(state.selectedDate, currentPart);
       if (!pData.weeklySnapshots) pData.weeklySnapshots = {};
       pData.weeklySnapshots[weekKey] = { rawLessonNote: pData.rawLessonNote || '', homeworks: JSON.parse(JSON.stringify(pData.homeworks)), savedAt: Date.now() };
       if (!Array.isArray(pData.homeworkHistory)) pData.homeworkHistory = [];
@@ -1488,12 +1599,23 @@
       localStorage.setItem(SELECTED_PART_KEY, partKey);
       renderAll();
     };
+
     window.toggleCheck = (itemId) => {
       ensureDayLog(state.selectedDate);
       const pData = getActivePartData();
-      pData.logs[state.selectedDate].checks[itemId] = !pData.logs[state.selectedDate].checks[itemId];
+      const dayLog = pData.logs[state.selectedDate];
+      const nextChecked = !dayLog.checks[itemId];
+      dayLog.checks[itemId] = nextChecked;
+      if (nextChecked) {
+        if (!dayLog.times[itemId] || Number(dayLog.times[itemId]) === 0) {
+          dayLog.times[itemId] = getLastPracticeTimeOrDefault(currentPart, itemId, state.selectedDate);
+        }
+      } else {
+        delete dayLog.times[itemId];
+      }
       saveState();
     };
+
     window.savePracticeTime = (itemId, val) => {
       ensureDayLog(state.selectedDate);
       const pData = getActivePartData();
@@ -1506,6 +1628,7 @@
       }
       saveState();
     };
+
     window.saveBpm = (itemId, val) => {
       ensureDayLog(state.selectedDate);
       const pData = getActivePartData();
@@ -1532,8 +1655,8 @@
       if (!confirm('이 연습 항목을 삭제할까요?')) return;
       const pData = getActivePartData();
       if (type === 'homework') {
-        const weekKey = getWeekStartKey(state.selectedDate);
-        const currentWeekKey = getWeekStartKey(getFormatDate(new Date()));
+        const weekKey = getWeekStartKey(state.selectedDate, currentPart);
+        const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), currentPart);
         if (weekKey !== currentWeekKey && pData.weeklySnapshots?.[weekKey]) {
           pData.weeklySnapshots[weekKey].homeworks = pData.weeklySnapshots[weekKey].homeworks.filter(i => i.id !== id);
         } else {
@@ -1542,6 +1665,7 @@
       } else {
         pData.routines = pData.routines.filter(i => i.id !== id);
       }
+      pData.taskOrder = (pData.taskOrder || []).filter(itemId => itemId !== id);
       saveState();
     };
     window.resetDefaultRoutines = () => {
@@ -1588,8 +1712,8 @@
       const target = document.getElementById('newItemTarget').value.trim();
       if (!title) { alert('연습 제목을 입력해주세요.'); return; }
       const pData = getActivePartData();
-      const weekKey = getWeekStartKey(state.selectedDate);
-      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()));
+      const weekKey = getWeekStartKey(state.selectedDate, currentPart);
+      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), currentPart);
       if (editingItemId) {
         const list = currentAddType === 'homework'
           ? ((weekKey !== currentWeekKey && pData.weeklySnapshots?.[weekKey]?.homeworks) ? pData.weeklySnapshots[weekKey].homeworks : (pData.homeworks || []))
@@ -1605,6 +1729,8 @@
       } else {
         pData.routines.push(newItem);
       }
+      if (!Array.isArray(pData.taskOrder)) pData.taskOrder = [];
+      pData.taskOrder.push(newItem.id);
       window.closeAddModal(); saveState();
     };
 
@@ -1634,7 +1760,7 @@
       text.split('\n').map(l => l.trim()).filter(Boolean).forEach((line, idx) => {
         pData.homeworks.push({ id: `${currentPart}-hw-` + Date.now() + '-' + idx, title: line, sub: '', target: '주간 목표' });
       });
-      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()));
+      const currentWeekKey = getWeekStartKey(getFormatDate(new Date()), currentPart);
       pData.weeklySnapshots[currentWeekKey] = { rawLessonNote: pData.rawLessonNote, homeworks: JSON.parse(JSON.stringify(pData.homeworks)), savedAt: Date.now() };
       saveState(); window.toggleRawNoteModal();
     };
@@ -1647,6 +1773,177 @@
       pData.homeworks = JSON.parse(JSON.stringify(meta.defaultHomeworks));
       saveState(); window.toggleRawNoteModal();
     };
+
+    window.openWeeklyReportModal = () => {
+      renderWeeklyReportPages();
+      const modal = document.getElementById('weeklyReportModal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    };
+    window.closeWeeklyReportModal = () => {
+      const modal = document.getElementById('weeklyReportModal');
+      modal.classList.add('hidden'); modal.classList.remove('flex');
+    };
+
+    function renderWeeklyReportPages() {
+      const partKey = PART_META[currentPart] ? currentPart : 'drum';
+      const meta = PART_META[partKey];
+      const pData = state.parts[partKey];
+      const goalCfg = getPartGoalConfig(partKey);
+      const weekDays = getWeekDates(state.selectedDate, partKey);
+      const weekRangeStr = `${weekDays[0].dateStr} ~ ${weekDays[6].dateStr}`;
+      const unifiedTasks = getOrderedUnifiedTasks(partKey, state.selectedDate);
+
+      let totalWeekMins = 0, totalWeekChecks = 0, practicedDays = 0;
+      const dayStats = weekDays.map(d => {
+        const comp = getPartDayCompletion(partKey, d.dateStr);
+        const mins = getPartDayTotalMinutes(partKey, d.dateStr);
+        const memo = pData.logs?.[d.dateStr]?.memo || '';
+        totalWeekMins += mins;
+        totalWeekChecks += comp.done;
+        if (comp.done > 0 || mins > 0) practicedDays++;
+        return { ...d, comp, mins, memo };
+      });
+
+      const weeklyTargetChecks = Math.max(1, goalCfg.targetDaysPerWeek * goalCfg.targetChecksPerDay);
+      const achievementRate = Math.min(100, Math.round((totalWeekChecks / weeklyTargetChecks) * 100));
+      const maxDayMin = Math.max(...dayStats.map(d => d.mins), 60);
+
+      const taskSummaryRows = unifiedTasks.map(task => {
+        let count = 0, mins = 0;
+        const bpms = [];
+        weekDays.forEach(d => {
+          const log = pData.logs?.[d.dateStr];
+          if (log?.checks?.[task.id]) count++;
+          if (log?.times?.[task.id]) mins += (Number(log.times[task.id]) || 0);
+          if (log?.bpms?.[task.id]) bpms.push(log.bpms[task.id]);
+        });
+        return { ...task, count, mins, lastBpm: bpms.length > 0 ? bpms[bpms.length - 1] : '-' };
+      });
+
+      const container = document.getElementById('weeklyReportPagesContainer');
+      container.innerHTML = `
+        <div class="a4-page bg-white text-slate-900 rounded-xl p-6 sm:p-8 shadow-xl space-y-5">
+          <div class="flex justify-between items-start border-b-2 border-slate-900 pb-4">
+            <div>
+              <div class="text-xs font-extrabold tracking-widest text-indigo-600 uppercase">${meta.eng} WEEKLY PRACTICE REPORT · PAGE 1 / 2</div>
+              <h1 class="text-2xl font-black text-slate-900 mt-1">${meta.emoji} ${meta.name} 주간 연습 종합 보고서</h1>
+              <p class="text-xs text-slate-500 mt-0.5">주간 범위: <strong>${weekRangeStr}</strong> (레슨 기준 요일: ${weekDays[0].dayName})</p>
+            </div>
+            <div class="text-right">
+              <span class="inline-block px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-bold">목표 달성률 ${achievementRate}%</span>
+              <div class="text-[11px] text-slate-500 mt-1">발행일: ${getFormatDate(new Date())}</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-4 gap-3">
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="text-[11px] text-slate-500 font-semibold">주간 총 연습시간</div>
+              <div class="text-lg font-black text-slate-900 mt-1">${formatMinutesToKorean(totalWeekMins)}</div>
+              <div class="text-[10px] text-indigo-600 font-semibold">(${formatMinutesToHMM(totalWeekMins)})</div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="text-[11px] text-slate-500 font-semibold">주간 출석 일수</div>
+              <div class="text-lg font-black text-slate-900 mt-1">${practicedDays}일 / ${goalCfg.targetDaysPerWeek}일</div>
+              <div class="text-[10px] text-emerald-600 font-semibold">${practicedDays >= goalCfg.targetDaysPerWeek ? '목표 출석 달성!' : '출석 진행중'}</div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="text-[11px] text-slate-500 font-semibold">총 완료 체크 수</div>
+              <div class="text-lg font-black text-slate-900 mt-1">${totalWeekChecks}회 <span class="text-xs font-normal text-slate-500">/ ${weeklyTargetChecks}회</span></div>
+              <div class="text-[10px] text-slate-500">일일 목표 ${goalCfg.targetChecksPerDay}개 기준</div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="text-[11px] text-slate-500 font-semibold">일평균 연습시간</div>
+              <div class="text-lg font-black text-slate-900 mt-1">${formatMinutesToKorean(Math.round(totalWeekMins / Math.max(1, practicedDays)))}</div>
+              <div class="text-[10px] text-slate-500">실제 연습일(${practicedDays}일) 평균</div>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <div class="text-xs font-bold text-slate-800 flex justify-between"><span>📊 요일별 연습 시간 및 체크 현황</span><span class="text-slate-500 font-normal">단위: 분(min)</span></div>
+            <div class="grid grid-cols-7 gap-2 items-end h-28 pt-4 px-2 border-b border-slate-300">
+              ${dayStats.map(d => {
+                const hPct = d.mins > 0 ? Math.max(8, Math.round((d.mins / maxDayMin) * 100)) : 0;
+                return `<div class="flex flex-col items-center justify-end h-full"><span class="text-[10px] font-bold text-slate-700 mb-1">${d.mins > 0 ? `${d.mins}분` : '-'}</span><div class="w-full max-w-[32px] bg-indigo-600 rounded-t-md" style="height:${hPct}%"></div></div>`;
+              }).join('')}
+            </div>
+            <div class="grid grid-cols-7 gap-2 text-center text-[10px] text-slate-600 font-semibold">
+              ${dayStats.map(d => `<div><div>${d.dayName}</div><div class="text-slate-400">${d.dateStr.slice(5)} (${d.comp.done}회)</div></div>`).join('')}
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="text-xs font-bold text-slate-800">📋 연습 항목별 주간 수행 내역 (현재 통합 배열 순서)</div>
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b-2 border-slate-800 bg-slate-100 text-slate-700">
+                  <th class="py-2 px-2.5">구분</th>
+                  <th class="py-2 px-2.5">연습 항목명 / 세부 포인트</th>
+                  <th class="py-2 px-2.5 text-center">주간 횟수</th>
+                  <th class="py-2 px-2.5 text-right">누적 시간</th>
+                  <th class="py-2 px-2.5 text-right">최근 BPM/상태</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200">
+                ${taskSummaryRows.map(r => `
+                  <tr>
+                    <td class="py-2 px-2.5 whitespace-nowrap">
+                      <span class="text-[10px] px-2 py-0.5 rounded font-bold ${r.itemType === 'homework' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'}">
+                        ${r.itemType === 'homework' ? '레슨숙제' : '개인루틴'}
+                      </span>
+                    </td>
+                    <td class="py-2 px-2.5"><div class="font-bold text-slate-900">${r.title}</div>${r.sub ? `<div class="text-[10px] text-slate-500">${r.sub}</div>` : ''}</td>
+                    <td class="py-2 px-2.5 text-center font-bold text-slate-800">${r.count} / 7일</td>
+                    <td class="py-2 px-2.5 text-right font-semibold text-indigo-700">${formatMinutesToKorean(r.mins)}</td>
+                    <td class="py-2 px-2.5 text-right text-slate-700">${r.lastBpm}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="a4-page bg-white text-slate-900 rounded-xl p-6 sm:p-8 shadow-xl space-y-5">
+          <div class="flex justify-between items-center border-b-2 border-slate-900 pb-3">
+            <div>
+              <div class="text-xs font-extrabold tracking-widest text-indigo-600 uppercase">${meta.eng} WEEKLY PRACTICE REPORT · PAGE 2 / 2</div>
+              <h2 class="text-xl font-black text-slate-900 mt-0.5">일자별 상세 연습 기록 & 레슨 회고</h2>
+            </div>
+            <div class="text-xs text-slate-500 font-semibold">${weekRangeStr}</div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="text-xs font-bold text-slate-800">🗓️ 7일간의 상세 연습 로그 및 코멘트</div>
+            <div class="space-y-2">
+              ${dayStats.map(d => {
+                const log = pData.logs?.[d.dateStr] || { checks: {}, times: {}, bpms: {}, memo: '' };
+                const doneItems = unifiedTasks.filter(t => log.checks?.[t.id]);
+                return `
+                  <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70 space-y-1">
+                    <div class="flex justify-between items-center text-xs">
+                      <span class="font-extrabold text-slate-900">${d.dateStr} (${d.dayName})</span>
+                      <span class="font-bold ${d.mins > 0 ? 'text-indigo-600' : 'text-slate-400'}">완료 ${d.comp.done}개 · 총 ${formatMinutesToKorean(d.mins)}</span>
+                    </div>
+                    <div class="text-[11px] text-slate-700">
+                      ${doneItems.length > 0
+                        ? doneItems.map(it => `<span class="inline-block mr-2">• ${it.title} (${log.times?.[it.id] || 0}분${log.bpms?.[it.id] ? ` / ${log.bpms[it.id]}` : ''})</span>`).join('')
+                        : '<span class="text-slate-400">기록된 연습 내역 없음</span>'}
+                    </div>
+                    ${d.memo ? `<div class="text-[11px] text-slate-600 bg-white px-2.5 py-1 rounded border border-slate-200 mt-1">💬 <strong>메모:</strong> ${d.memo}</div>` : ''}
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl border border-slate-300 bg-slate-50 space-y-1.5">
+            <div class="text-xs font-bold text-slate-800">📌 이번 주 레슨 노트 원문</div>
+            <pre class="text-[11px] text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">${getRawNoteForPartAndDate(partKey, state.selectedDate) || '등록된 레슨 노트가 없습니다.'}</pre>
+          </div>
+
+          <div class="p-4 rounded-xl border-2 border-dashed border-slate-300 space-y-6">
+            <div class="text-xs font-bold text-slate-700">✍️ 주간 총평 & 다음 주 레슨 피드백 메모 (수기 작성란)</div>
+            <div class="h-14 border-b border-slate-200"></div>
+          </div>
+        </div>`;
+    }
 
     window.openSyncModal = () => { const m = document.getElementById('syncModal'); m.classList.remove('hidden'); m.classList.add('flex'); };
     window.closeSyncModal = () => { const m = document.getElementById('syncModal'); m.classList.add('hidden'); m.classList.remove('flex'); };
