@@ -177,6 +177,9 @@
             <h2 class="text-base sm:text-lg font-bold text-white" id="selectedDateTitle">오늘의 연습</h2>
             <span id="lessonDayBadge" class="hidden px-2 py-0.5 text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full">🔥 주간 점검 / 레슨 데이</span>
             <span id="dailyTotalTimeChip" class="px-2.5 py-0.5 text-[11px] font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30 rounded-full"><i class="fa-regular fa-clock mr-1"></i>오늘 0분</span>
+            <button onclick="window.resetDailyPracticeTime()" id="resetDailyTimeBtn" title="선택한 날짜의 연습시간 및 체크 기록을 0분으로 초기화" class="px-2.5 py-0.5 text-[11px] font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 rounded-full transition flex items-center gap-1">
+              <i class="fa-solid fa-rotate-left text-[10px]"></i><span>오늘 시간 초기화</span>
+            </button>
           </div>
           <p class="text-xs text-slate-400 mt-0.5" id="dailyTargetSubInfo">체크하면 이전 연습 시간(없으면 10분)이 자동 입력됩니다.</p>
         </div>
@@ -1395,7 +1398,12 @@
 
       const todayMins = getPartDayTotalMinutes(currentPart, dateStr);
       const timeChip = document.getElementById('dailyTotalTimeChip');
-      if (timeChip) timeChip.innerHTML = `<i class="fa-regular fa-clock mr-1"></i>오늘 ${formatMinutesToKorean(todayMins)}`;
+      const isSelectedToday = dateStr === getFormatDate(new Date());
+      if (timeChip) timeChip.innerHTML = `<i class="fa-regular fa-clock mr-1"></i>${isSelectedToday ? '오늘' : '선택일'} ${formatMinutesToKorean(todayMins)}`;
+      const resetTimeBtn = document.getElementById('resetDailyTimeBtn');
+      if (resetTimeBtn) {
+        resetTimeBtn.innerHTML = `<i class="fa-solid fa-rotate-left text-[10px]"></i><span>${isSelectedToday ? '오늘 시간 초기화' : '선택일 시간 초기화'}</span>`;
+      }
 
       const unifiedList = getOrderedUnifiedTasks(currentPart, dateStr);
       const listEl = document.getElementById('unifiedTaskList');
@@ -1944,6 +1952,36 @@
         delete pData.logs[state.selectedDate].times[itemId];
       }
       saveState();
+    };
+
+    window.resetDailyPracticeTime = async () => {
+      const pData = getActivePartData();
+      const meta = PART_META[currentPart] || PART_META.drum;
+      const dateStr = state.selectedDate;
+      const dayLog = pData.logs?.[dateStr];
+      const totalMins = getPartDayTotalMinutes(currentPart, dateStr);
+      const comp = getPartDayCompletion(currentPart, dateStr);
+      const hasAnyRecord = totalMins > 0 || comp.done > 0 || (dayLog && (Object.keys(dayLog.times || {}).length > 0 || Object.keys(dayLog.checks || {}).length > 0));
+
+      if (!hasAnyRecord) {
+        showToast(`${dateStr}에는 초기화할 연습 시간이나 체크 기록이 없습니다.`, 'info');
+        return;
+      }
+
+      const ok = await openCustomDialog({
+        title: '연습시간 및 체크 초기화',
+        message: `[${meta.name}] ${dateStr}의 연습 시간(${formatMinutesToKorean(totalMins)})과 체크 기록을 모두 0분으로 초기화할까요?
+(숨겨진 항목에 남아 있던 잔여 연습 시간까지 모두 깨끗하게 정리됩니다.)`,
+        mode: 'confirm'
+      });
+      if (!ok) return;
+
+      if (pData.logs?.[dateStr]) {
+        pData.logs[dateStr].times = {};
+        pData.logs[dateStr].checks = {};
+      }
+      saveState();
+      showToast(`${dateStr} [${meta.name}] 연습 시간과 체크 기록이 0분으로 초기화되었습니다.`, 'success');
     };
 
     window.saveBpm = (itemId, val) => {
